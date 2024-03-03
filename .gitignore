@@ -1,0 +1,7 @@
+/venv/*
+/venv
+*.xml
+*.iml
+__pycache__
+.ipynb_checkpoints
+*.ipynb
