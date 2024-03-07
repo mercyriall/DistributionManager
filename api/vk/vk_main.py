@@ -81,12 +81,12 @@ class VkDistribution(VkTemplate):
 
     async def create_post(self, post_text: str, page_type="account"):
         if page_type == "account":
-            payload = take_payload_data('api/vk/create_post/homepage_payload.json')
+            payload = take_payload_data('api/vk/create_post_payload/homepage_payload.json')
             acc_id = await self._take_page_id(page_type)
             ref_payload = vk_account_post_details(payload, acc_id, post_text)
 
         elif page_type == "group":
-            payload = take_payload_data('api/vk/create_post/group_payload.json')
+            payload = take_payload_data('api/vk/create_post_payload/group_payload.json')
             group_id = await self._take_page_id(page_type)
             ref_payload = vk_group_post_details(payload, group_id, post_text)
 
