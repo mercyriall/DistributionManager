@@ -25,9 +25,26 @@ class DB_Users(BaseDB):
 
         cookies = await self.fetch(query)
         return cookies[0]
-    async def insert_cookie(self, login, cookies: dict):
-        pass
 
+    async def update_cookie(self, login, files: list):
+
+        if not(await self.check(login)):
+            await self.insert_new_user(login)
+
+        cookie_dict: dict = self.get_cookies_on_file(files)
+
+        update_params = ', '.join([f"{key} = '{value}'" for key, value in cookie_dict.items()])
+
+        query = f"""UPDATE users
+                    SET {update_params}
+                    WHERE username = '{login}'"""
+        await self.execute(query)
+
+    async def insert_new_user(self, login):
+        query = f"""INSERT INTO users (username)
+                    VALUES ('{login}')"""
+
+        await self.execute(query)
     @staticmethod
     def get_cookies_on_file(files: list):
         cookies_dict = {}
@@ -37,14 +54,3 @@ class DB_Users(BaseDB):
         return cookies_dict
 
 
-async def main():
-    db = DB_Users()
-    db2 = DB_Users()
-    print(id(db), id(db2))
-
-    await db.init_pool()
-    flag = await db2.check('kjs')
-    print(flag)
-    cookies = db.get_cookies_on_file(['insta.txt', 'tg.txt', 'vk.txt'])
-    print(cookies)
-asyncio.run(main())
