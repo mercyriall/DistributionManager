@@ -1,9 +1,11 @@
 {
+  "_ads_group_id": "",
   "act": "post",
-  "to_id": -220326700,
+  "to_id": "",
   "type": "all",
   "friends_only": "",
   "best_friends_only": "",
+  "Message": "",
   "close_comments": 0,
   "mute_notifications": 0,
   "mute_notifications_in_mentions": "",
@@ -16,7 +18,5 @@
   "from": "",
   "fixed": "",
   "update_admin_tips": 0,
-  "Message": "pri",
-  "al": 1,
-  "_ads_group_id": 220326700
+  "al": 1
 }

@@ -11,12 +11,16 @@ cookie = os.getenv('COOKIE')
 acc_url = os.getenv('PAGE_URL')
 
 post_text = "helyep"
+images_name = ['tyan.jpg', 'hf3eIGo-Sn8.jpg']
 
 async def main():
     tg_user_id = random.randint(0, 1000)
     account_url = acc_url.split("/")[-1]
 
-    await VkDistribution(str(tg_user_id), cookie, account_url).create_post(post_text, "group")
+    vk_manager = VkDistribution(str(tg_user_id), cookie, account_url)
+
+    # можно ничего не передавать, дефолт значения 'hellyep' и без картинки (пустой список)
+    await vk_manager.create_post(post_text, images_name)
 
 
 if __name__ == '__main__':
