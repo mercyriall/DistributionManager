@@ -1,6 +1,6 @@
 {
   "act": "post",
-  "to_id": "101818077",
+  "to_id": "",
   "type": "all",
   "friends_only": "",
   "best_friends_only": "",
@@ -16,6 +16,6 @@
   "from": "",
   "fixed": "",
   "update_admin_tips": 0,
-  "Message": "pri",
+  "Message": "",
   "al": 1
 }

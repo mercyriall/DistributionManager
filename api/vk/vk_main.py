@@ -49,7 +49,7 @@ class VkDistribution(VkTemplate):
     def __init__(self, id: str, cookie: str, nickname: str):
         super().__init__(id, cookie, nickname)
 
-    async def _take_page_id(self, page_type="account"):
+    async def _take_page_id(self):
         request_url = f"https://vk.com/{self.get_nickname()}"
         try:
             response = requests.post(
@@ -58,52 +58,73 @@ class VkDistribution(VkTemplate):
             )
 
             if response.status_code == 200:
+                try:
+                    # профиль
+                    received_id = response.text.split("user_id")[1][0:20].split(":")[1].split(".")[0]  # ))
+                    link_type = "user"
+                except:
+                    # группа
+                    try:
+                        received_id = response.text.split("data-group_id")[1][0:20].split("\"")[1]
+                        link_type = "group"
+                    except: return None
+
                 with open('logging/app.log', 'a', encoding='UTF-8') as f:
                     f.write(f"(ВК) -FINE- {response.status_code} запрос на получение информации страницы\n")
                 print(f"(ВК) -FINE- {response.status_code} запрос на получение информации страницы")
 
-                if page_type == "account":
-                    return response.text.split("user_id")[1][0:20].split(":")[1].split(".")[0]  # ))
-                elif page_type == "group":
-                    return response.text.split("data-group_id")[1][0:20].split("\"")[1]
+                return link_type, received_id
             else:
                 with open('logging/app.log', 'a', encoding='UTF-8') as f:
                     f.write(f"(ВК) -ЕRROR- {response.status_code} запрос на получение информации страницы\n")
                 print(f"(ВК) -ЕRROR- {response.status_code} запрос на получение информации страницы")
 
                 return None
+
         except Exception:
             with open('logging/app.log', 'a', encoding='UTF-8') as f:
                 f.write("(ВК) -ЕRROR- запрос на получение информации страницы\n" + traceback.format_exc() + "\n")
             print("(ВК) -ЕRROR- запрос на получение информации страницы\n", traceback.format_exc())
 
             return None
+    async def _take_images_id(self, images: list):
+        pass
 
-    async def create_post(self, post_text: str, page_type="account"):
-        if page_type == "account":
+    async def _insert_image_payload(self):
+        pass
+
+    async def create_post(self, post_text: str = 'hellyep', images: list = []):
+        teg, acc_id = await self._take_page_id()
+        if images != []: images_id = await self._take_images_id(images)
+
+        if teg == 'user':
             payload = take_payload_data('api/vk/create_post_payload/homepage_payload.json')
-            acc_id = await self._take_page_id(page_type)
+            if images_id != None:
+                await self._insert_image_payload()
             ref_payload = vk_account_post_details(payload, acc_id, post_text)
 
-        elif page_type == "group":
+        elif teg == 'group':
             payload = take_payload_data('api/vk/create_post_payload/group_payload.json')
-            group_id = await self._take_page_id(page_type)
-            ref_payload = vk_group_post_details(payload, group_id, post_text)
+            if images_id != None:
+                await self._insert_image_payload()
+            ref_payload = vk_group_post_details(payload, acc_id, post_text)
 
         else:
-            print('неправильный "page_type"')
+            print('что то не так с ссылкой на аккаунт (не получается получить id профиля)')
             return None
 
-        coded_body = urllib.parse.urlencode(ref_payload)
+        body = urllib.parse.urlencode(ref_payload)
 
         try:
             response = requests.post(
                 url=url_create_post,
-                json=coded_body,
+                json=body,
                 headers=self.get_headers()
             )
 
             if response.status_code == 200:
+                response.text.split('statsMeta')[0][200] # проверка действительно ли запрос успешный
+
                 with open('logging/app.log', 'a', encoding='UTF-8') as f:
                     f.write(f"(ВК) -FINE- {response.status_code} запрос на создание поста\n")
                 print(f"(ВК) -FINE- {response.status_code} запрос на создание поста")
@@ -116,7 +137,7 @@ class VkDistribution(VkTemplate):
                 return None
         except Exception:
             with open('logging/app.log', 'a', encoding='UTF-8') as f:
-                f.write("(ВК) -ЕRROR- запрос на создание поста\n" + traceback.format_exc() +  "\n")
+                f.write("(ВК) -ЕRROR- запрос на создание поста\n" + traceback.format_exc() + "\n")
             print("(ВК) -ЕRROR- запрос на создание поста\n", traceback.format_exc())
 
             return None

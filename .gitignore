@@ -9,3 +9,4 @@ __pycache__
 *.ipynb
 *.log
 database/account_data.txt
+*.jpg
