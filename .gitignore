@@ -10,3 +10,4 @@ __pycache__
 *.log
 database/account_data.txt
 *.jpg
+test_back.py
