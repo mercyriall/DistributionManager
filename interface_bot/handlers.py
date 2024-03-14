@@ -37,3 +37,15 @@ async def check_networks_handler(msg: Message):
     )
     await msg.answer("Тут крч ф строка с оформлением и проверкой из бд",
                      reply_markup=keyboard)
+
+@router.message(F.text == "Создать пост💬")
+async def check_networks_handler(msg: Message):
+    #тут должна быть проверка на привязанные аккаунты
+    keyboard = types.ReplyKeyboardMarkup(
+        keyboard=keyboards.kb_networks,
+        resize_keyboard=True,
+        input_field_placeholder="Воспользуйтесь меню ниже"
+    )
+    await msg.answer("Напиши пост в следующем сообщении и прикрепи картинки, если есть.",
+                     reply_markup=keyboard)
+    
