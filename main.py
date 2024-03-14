@@ -9,12 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-cookie = os.getenv('COOKIE')
-acc_url = os.getenv('PAGE_URL')
-bot_token = '7065134771:AAEn8QhdMf3Psd0WMPS8bFQ8P1CoHMQFVoo'
-
-post_text = "helyep"
-images_name = ['tyan.jpg', 'hf3eIGo-Sn8.jpg']
+bot_token = os.getenv('BOT_TOKEN')
 
 async def main():
     logging.basicConfig(level=logging.INFO)
