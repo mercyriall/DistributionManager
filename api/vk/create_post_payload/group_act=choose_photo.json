@@ -1,0 +1,12 @@
+{
+  "_ads_group_id": "grId",
+  "act": "choose_photo",
+  "al": 1,
+  "al_ad": 0,
+  "boxhash": "randomPass",
+  "from": "post",
+  "mail_add": "",
+  "max_files": 10,
+  "no_album_select": "",
+  "to_id": "-grId"
+}
