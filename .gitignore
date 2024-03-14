@@ -11,3 +11,4 @@ __pycache__
 database/account_data.txt
 *.jpg
 test_back.py
+/idea
