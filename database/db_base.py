@@ -1,8 +1,10 @@
 import os
 import asyncpg
 from dotenv import load_dotenv
+
 class BaseDB:
     _instance = None
+
     def __init__(self):
         self.pool = None
 
@@ -10,6 +12,7 @@ class BaseDB:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
+
     async def init_pool(self):
         load_dotenv()
 
@@ -26,6 +29,7 @@ class BaseDB:
             host=db_host,
             port=db_port
         )
+
     async def execute(self, query):
         async with self.pool.acquire() as connection:
             return await connection.execute(query)

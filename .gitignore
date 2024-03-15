@@ -8,7 +8,7 @@ __pycache__
 .ipynb_checkpoints
 *.ipynb
 *.log
-database/account_data.txt
 *.jpg
 test_back.py
 /idea
+*.png
