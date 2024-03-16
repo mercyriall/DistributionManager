@@ -9,6 +9,7 @@ class DB_Users(BaseDB):
         """
             Проверка наличия пользователя в бд
         """
+
         query = f"""SELECT * FROM users WHERE username='{login}'"""
 
         user = await self.fetch(query)
