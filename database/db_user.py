@@ -66,3 +66,4 @@ class DB_Users(BaseDB):
             with open(file, 'r') as f:
                 cookies_dict[file.split('.')[0]] = f.readline()
         return cookies_dict
+    
