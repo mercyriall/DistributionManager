@@ -16,14 +16,14 @@ from utils.create_request_parameters import take_payload_data, vk_account_post_d
 
 load_dotenv()
 
-_proxy_url = os.getenv('PROXY_TOKEN')
+_proxy_token = os.getenv('PROXY_TOKEN')
 _proxy_geo = os.getenv('GEO_CODE')
 _user_agent = 'Mozilla/5.0'
 
 class VkTemplate():
     def __init__(self, id: str, cookie: str, nickname: str):
         self._id = id
-        self._proxy = f'http://{_proxy_url}:sessionId={id}&render=false&super=true&regionalGeoCode={_proxy_geo}@proxy.scrape.do:8080'
+        self._proxy = f'http://{_proxy_token}:sessionId={id}&render=false&super=true&regionalGeoCode={_proxy_geo}@proxy.scrape.do:8080'
         self._nickname = nickname
         self._headers = self._request_headers_create(cookie)
         self.logging = Logging()
@@ -93,13 +93,13 @@ class VkDistribution(VkTemplate):
                                 self.logging.warning(f"ID={self.get_id()} неправильная ссылка {request_url}")
                                 return None, None
 
-                        self.logging.info(f"ID={self.get_id()} (ВК) запрос на получение информации страницы STATUS={response.status}")
+                        self.logging.info(f"ID={self.get_id()} (VK) запрос на получение информации страницы STATUS={response.status}")
                     else:
-                        self.logging.warning(f"ID={self.get_id()} (ВК) запрос на получение информации страницы STATUS={response.status}")
+                        self.logging.warning(f"ID={self.get_id()} (VK) запрос на получение информации страницы STATUS={response.status}")
                         return None, None
 
         except:
-            self.logging.error(f"ID={self.get_id()} (ВК) запрос на получение информации страницы\n {traceback.format_exc()}")
+            self.logging.error(f"ID={self.get_id()} (VK) запрос на получение информации страницы\n {traceback.format_exc()}")
             return None, None
 
         return link_type, received_id
@@ -131,12 +131,12 @@ class VkDistribution(VkTemplate):
                 ) as response:
                     if response.status == 200:
                         token = (await response.text()).split('token=')[1][0:411].split("'")[0]
-                        self.logging.info(f"ID={self.get_id()} (ВК) получение токена ACC={acc_id} STATUS={response.status}")
+                        self.logging.info(f"ID={self.get_id()} (VK) получение токена ACC={acc_id} STATUS={response.status}")
                     else:
-                        self.logging.warning(f"ID={self.get_id()} (ВК) получение токена ACC={acc_id} STATUS={response.status}")
+                        self.logging.warning(f"ID={self.get_id()} (VK) получение токена ACC={acc_id} STATUS={response.status}")
 
         except:
-            self.logging.error(f"ID={self.get_id()} (ВК) получение токена ACC={acc_id}")
+            self.logging.error(f"ID={self.get_id()} (VK) получение токена ACC={acc_id}")
             return None
 
         return token
@@ -164,14 +164,14 @@ class VkDistribution(VkTemplate):
                             # проверка правильно ли прошел запрос
                             check_wrk = (await response.text()).split('kid')[1]
                             images_hash.append(json.loads(await response.text()))
-                            self.logging.info(f"ID={self.get_id()} (ВК) хеширования картинки "
+                            self.logging.info(f"ID={self.get_id()} (VK) хеширования картинки "
                                               f"IMG={file_name} STATUS={response.status}")
                         else:
-                            self.logging.warning(f"ID={self.get_id()} (ВК) хеширование картинки"
+                            self.logging.warning(f"ID={self.get_id()} (VK) хеширование картинки"
                                                  f" IMG={file_name} STATUS={response.status}")
 
             except:
-                self.logging.error(f"ID={self.get_id()} (ВК) хеширование картинки"
+                self.logging.error(f"ID={self.get_id()} (VK) хеширование картинки"
                                    f" FILE={file_name}\n {traceback.format_exc()}")
 
         return images_hash
@@ -199,30 +199,30 @@ class VkDistribution(VkTemplate):
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                             url=url_images_id,
-                            #proxy=self.get_proxy(),
+                            # proxy=self.get_proxy(),
                             # ssl=False,
                             json=body,
                             headers=self.get_headers()
                     ) as response:
                         if response.status == 200:
-                            images_id.append(str(payload['mid']) +
-                                             (await response.text()).split(str(payload['mid']))[1].split('"')[0])
-
-                            self.logging.info(f"ID={self.get_id()} (ВК) получение id картинки"
-                                              f" TEG={teg} STATUS={response.status}")
+                            image_id = str(payload['mid']) + (await response.text()).split(str(payload['mid']))[1].split('"')[0]
+                            images_id.append(image_id)
+                            self.logging.info(f"ID={self.get_id()} (VK) получение id картинки"
+                                              f" IMG_ID={image_id} TEG={teg} STATUS={response.status}")
                         else:
-                            self.logging.warning(f"ID={self.get_id()} (ВК) получение id картинки"
+                            self.logging.warning(f"ID={self.get_id()} (VK) получение id картинки"
                                                  f" TEG={teg} STATUS={response.status}")
 
             except:
-                self.logging.error(f"ID={self.get_id()} (ВК) получение id картинки"
+                self.logging.error(f"ID={self.get_id()} (VK) получение id картинки"
                                    f" TEG={teg}\n {traceback.format_exc()}")
 
         return images_id
 
-    async def _insert_image_payload(self, payload: json, images_id: list):
-        payload['primary_attachments_mode'] = 'grid'
-        payload['hash'] = '6dedfe9d7064041f35'
+    async def _insert_image_payload(self, payload: dict, images_id: list, teg: str):
+        if teg == "user": payload['hash'] = '9f40df1c00c16002f5'
+        else: payload['hash'] = '6dedfe9d7064041f35'
+
         for i in range(len(images_id)):
             payload.update({f'attach{i+1}_type': 'photo'})
             payload.update({f'attach{i+1}': images_id[i]})
@@ -243,18 +243,18 @@ class VkDistribution(VkTemplate):
 
         else:
             self.logging.warning(f'ID={self.get_id()}'
-                                 f' (ВК) что то не так с ссылкой на аккаунт ( не получается получить id профиля )')
+                                 f' (VK) что то не так с ссылкой на аккаунт ( не получается получить id профиля )')
             return None
 
         if images != []: images_id = await self._take_images_id(images, teg, acc_id)
-        if images_id != []: await self._insert_image_payload(ref_payload, images_id)
+        if images_id != []: await self._insert_image_payload(ref_payload, images_id, teg)
 
         body = urllib.parse.urlencode(ref_payload)
-
         return body
 
     async def create_post(self, post_text: str = '', images: list = []):
         url_create_post = 'https://vk.com/al_wall.php?act=post'
+        if post_text == '' and images == []: return False
 
         body = await self._create_post_preparation(post_text, images)
 
@@ -267,19 +267,18 @@ class VkDistribution(VkTemplate):
                         json=body,
                         headers=self.get_headers()
                 ) as response:
-
                     if response.status == 200:
                         # проверка действительно ли запрос успешный
                         check_wrk = (await response.text()).split('statsMeta')[0][200]
 
-                        self.logging.info(f"ID={self.get_id()} (ВК)"
+                        self.logging.info(f"ID={self.get_id()} (VK)"
                                           f" STATUS={response.status} запрос на создание поста")
 
                     else:
-                        self.logging.warning(f"ID={self.get_id()} (ВК)"
+                        self.logging.warning(f"ID={self.get_id()} (VK)"
                                              f" STATUS={response.status} запрос на создание поста")
                         return None
         except:
             self.logging.error(f"ID={self.get_id()}"
-                               f" (ВК) запрос на создание поста\n {traceback.format_exc()}")
+                               f" (VK) запрос на создание поста\n {traceback.format_exc()}")
             return None
