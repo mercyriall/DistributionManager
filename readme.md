@@ -35,7 +35,7 @@
 ### <a name="извлечение-cookie">__Извлечение cookie__</a>
 1) Установить расширение [EditThisCookie](https://chromewebstore.google.com/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg?hl=ru) для вашего браузера
 2) Создаем txt файл на компьютере, называем его в соответствии с соц. сетью ( _cookie_vk.txt_, _cookie_twitter.txt_ )
-3) Входим в аккаунт соц. сети ( [доступные](#доступные) )
+3) Входим в аккаунт соц. сети ( [доступные](#доступные-соц-сети) )
 4) Находясь в аккаунте ищем кнопку с имеющимися расширениями
 
     ![img_1.png](md_assets/img_1.png)
