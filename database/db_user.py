@@ -1,7 +1,7 @@
 from db_base import BaseDB
 import asyncio
 import re
-
+from utils.cookie_format_change import cookie_to_base64
 class DB_Users(BaseDB):
     def __init__(self):
         super().__init__()
@@ -42,7 +42,7 @@ class DB_Users(BaseDB):
         if cookie_dict is None and files is not None:
             cookie_dict: dict = self.get_cookies_on_file(files)
 
-        update_params = ', '.join([f"{key} = '{value}'" for key, value in cookie_dict.items()])
+        update_params = ', '.join([f"{key} = '{cookie_to_base64(value)}'" for key, value in cookie_dict.items()])
 
         query = f"""UPDATE data_user
                     SET {update_params}
