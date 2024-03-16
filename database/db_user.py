@@ -9,39 +9,48 @@ class DB_Users(BaseDB):
 
     async def check(self, login):
         """Проверка наличия пользователя в бд"""
-        query = f"""SELECT * FROM users WHERE username='{login}'"""
+        query = f"""SELECT * FROM data_user WHERE tg_id='{login}'"""
 
         user = await self.fetch(query)
         return bool(len(user))
 
-    async def get_cookies(self, login):
+    async def get_data_user(self, login):
         """Метод принимает логин пользователя бота и возвращает список cookies из бд
-           Для получения конкретного cookie обращение происходит по ключам:
-           Вконтакте:'cookie_vk',
-           Instagram:'cookie_insta'
-           Telegram: 'cookie_tg'"""
+                   Для получения конкретного cookie обращение происходит по ключам:
+                   Ссылка на группу: 'cookie_vk'
+                   Вконтакте:'cookie_vk',
+                   Twitter: 'cookie_tw' """
+        if not(await self.check(login)):
+            await self.insert_new_user(login)
 
-        query = f"""SELECT cookie_vk, cookie_insta, cookie_tg FROM users WHERE username='{login}'"""
+
+        query = f"""SELECT link_vk, cookie_vk, cookie_tw FROM data_user WHERE tg_id='{login}'"""
 
         cookies = await self.fetch(query)
         return cookies[0]
 
-    async def update_cookie(self, login, files: list):
+    async def insert_link_vk(self, login: str, link: str):
+        query = f"""UPDATE data_user
+                   SET link_vk = '{link}
+                   WHERE tg_id = '{login}''"""
+        await self.execute(query)
+
+    async def update_cookie(self, login, files: list = None, cookie_dict: dict = None):
 
         if not(await self.check(login)):
             await self.insert_new_user(login)
-
-        cookie_dict: dict = self.get_cookies_on_file(files)
+        if cookie_dict is None and files is not None:
+            cookie_dict: dict = self.get_cookies_on_file(files)
 
         update_params = ', '.join([f"{key} = '{value}'" for key, value in cookie_dict.items()])
 
-        query = f"""UPDATE users
+        query = f"""UPDATE data_user
                     SET {update_params}
-                    WHERE username = '{login}'"""
+                    WHERE tg_id = '{login}'"""
         await self.execute(query)
 
     async def insert_new_user(self, login):
-        query = f"""INSERT INTO users (username)
+        query = f"""INSERT INTO data_user (tg_id)
                     VALUES ('{login}')"""
 
         await self.execute(query)
@@ -52,5 +61,4 @@ class DB_Users(BaseDB):
             with open(file, 'r') as f:
                 cookies_dict[file.split('.')[0]] = f.readline()
         return cookies_dict
-
 
