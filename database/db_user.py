@@ -17,7 +17,7 @@ class DB_Users(BaseDB):
     async def get_data_user(self, login):
         """Метод принимает логин пользователя бота и возвращает список cookies из бд
                    Для получения конкретного cookie обращение происходит по ключам:
-                   Ссылка на группу: 'cookie_vk'
+                   Ссылка на группу: 'link_vk'
                    Вконтакте:'cookie_vk',
                    Twitter: 'cookie_tw' """
         if not(await self.check(login)):
