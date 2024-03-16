@@ -2,12 +2,17 @@ from aiogram import types, F, Router
 from aiogram.types import Message
 from aiogram.filters import Command
 import interface_bot.keyboards as keyboards
+from database.db_user import DB_Users
 
 router = Router()
+
+db = DB_Users()
 
 
 @router.message(Command('start'))
 async def start_handler(msg: Message):
+    if await db.check(msg.from_user.id) is False:
+        await db.insert_new_user(msg.from_user.id)
     keyboard = types.ReplyKeyboardMarkup(
         keyboard=keyboards.kb_menu,
         resize_keyboard=True,
@@ -30,6 +35,8 @@ async def menu_handler(msg: Message):
 
 @router.message(F.text == "Привязанные соц. сети📝")
 async def check_networks_handler(msg: Message):
+    user = db.find_user(msg.from_user.id)
+
     keyboard = types.ReplyKeyboardMarkup(
         keyboard=keyboards.kb_networks,
         resize_keyboard=True,
