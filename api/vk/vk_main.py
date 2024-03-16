@@ -55,13 +55,6 @@ class VkDistribution(VkTemplate):
     def __init__(self, id: str, cookie: str, nickname: str):
         super().__init__(id, cookie, nickname)
 
-    def update_cookie(self):
-        #запрос на получение куки
-        #cookie_base64 = cookie_to_base64(cookie_json)
-        #self.set_headers(cookie_base64)
-        #return cookie_base64
-        pass
-
     async def check_cookie_and_link(self):
         tmp1, tmp2 = await self._take_page_id()
         if tmp1 is None and tmp2 is None:
@@ -228,7 +221,6 @@ class VkDistribution(VkTemplate):
             payload.update({f'attach{i+1}': images_id[i]})
         return payload
 
-
     async def _create_post_preparation(self, post_text: str, images: list): # формируем тело запроса
         images_id = None
         teg, acc_id = await self._take_page_id()
@@ -278,6 +270,7 @@ class VkDistribution(VkTemplate):
                         self.logging.warning(f"ID={self.get_id()} (VK)"
                                              f" STATUS={response.status} запрос на создание поста")
                         return None
+
         except:
             self.logging.error(f"ID={self.get_id()}"
                                f" (VK) запрос на создание поста\n {traceback.format_exc()}")

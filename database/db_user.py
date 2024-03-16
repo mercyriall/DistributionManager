@@ -5,7 +5,6 @@ class DB_Users(BaseDB):
     def __init__(self):
         super().__init__()
 
-
     async def check(self, login):
         """
         Проверка наличия пользователя в бд
@@ -25,9 +24,8 @@ class DB_Users(BaseDB):
         Twitter: 'cookie_tw'
         """
 
-        if not(await self.check(login)):
+        if not (await self.check(login)):
             await self.insert_new_user(login)
-
 
         query = f"""SELECT link_vk, cookie_vk, cookie_tw FROM data_user WHERE tg_id='{login}'"""
 
@@ -41,8 +39,7 @@ class DB_Users(BaseDB):
         await self.execute(query)
 
     async def update_cookie(self, login, files: list = None, cookie_dict: dict = None):
-
-        if not(await self.check(login)):
+        if not (await self.check(login)):
             await self.insert_new_user(login)
         if cookie_dict is None and files is not None:
             cookie_dict: dict = self.get_cookies_on_file(files)
@@ -59,6 +56,7 @@ class DB_Users(BaseDB):
                     VALUES ('{login}')"""
 
         await self.execute(query)
+
     @staticmethod
     def get_cookies_on_file(files: list):
         cookies_dict = {}

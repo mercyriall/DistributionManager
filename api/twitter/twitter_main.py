@@ -17,6 +17,7 @@ _user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHT
 _bearer = os.getenv('TWITTER_BEARER')
 _tweet_key = os.getenv('TWITTER_TWEET_KEY')
 
+
 class TwitterTemplate():
     def __init__(self, id: str, cookie: str):
         self._id = id
@@ -24,7 +25,8 @@ class TwitterTemplate():
         self._headers = self._request_headers_create(cookie)
         self.logging = Logging()
 
-    def _request_headers_create(self, cookie: str):
+    @staticmethod
+    def _request_headers_create(cookie: str):
         cookies_dictionary, csrf_token = twitter_cookie_refactor(cookie)
 
         return {
@@ -48,6 +50,20 @@ class TwitterTemplate():
 class TwitterDistribution(TwitterTemplate):
     def __init__(self, id: str, cookie: str):
         super().__init__(id, cookie)
+
+    def update_cookie(self):
+        #запрос на получение куки
+        #cookie_base64 = cookie_to_base64(cookie_json)
+        #self.set_headers(cookie_base64)
+        #return cookie_base64
+        pass
+
+    async def check_cookie(self):
+        # tmp1, tmp2 = await self._take_page_id()
+        # if tmp1 is None and tmp2 is None:
+        #     return False
+        # return True
+        pass
 
     async def create_tweet(self, tweet_text: str = '', images: list = []):
         url_create_tweet = f'https://twitter.com/i/api/graphql/{_tweet_key}/CreateTweet'
@@ -154,7 +170,7 @@ class TwitterDistribution(TwitterTemplate):
                             # ssl=False,
                             data=files
                     ) as response:
-                        if response.status == 200:
+                        if response.status == 200 or response.status == 204:
                             activate_id.append(images_id[i])
 
                             self.logging.info(f"ID={self.get_id()} (TWITTER)"
@@ -169,15 +185,15 @@ class TwitterDistribution(TwitterTemplate):
         return activate_id
 
     async def _command_FINALIZE(self, images_id: list):
-        original_md5 = 'aa47cd47c8b414f2af73801dd426349f'
+        original_md5 = '1e0ddfe203fb440506cf5dd9c34e3e4c'
 
         headers = self.get_headers()
         headers.update({"referer": "https://twitter.com/"})
         headers.pop("content-type", None)
 
-        for image_id in images_id:
-            url_finalize = (f'https://upload.twitter.com/i/media/upload.json?'
-                            f'command=FINALIZE&media_id={image_id}&original_md5={original_md5}')
+        for i in range(len(images_id)):
+            url_finalize = f'https://upload.twitter.com/i/media/upload.json?command=FINALIZE&media_id={images_id[i]}&original_md5={original_md5}'
+
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
@@ -186,7 +202,7 @@ class TwitterDistribution(TwitterTemplate):
                             # ssl=False,
                             headers=headers
                     ) as response:
-                        if response.status == 200 or response.status == 202:
+                        if response.status == 200 or response.status == 201:
                             json_data = json.loads(await response.text())
                             images_id.append(json_data['media_id_string'])
 
