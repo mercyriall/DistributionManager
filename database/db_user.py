@@ -1,9 +1,10 @@
-from db_base import BaseDB
+from database.db_base import BaseDB
 from utils.cookie_format_change import cookie_to_base64
 
 class DB_Users(BaseDB):
     def __init__(self):
         super().__init__()
+
 
     async def check(self, login):
         """
@@ -19,27 +20,65 @@ class DB_Users(BaseDB):
         """
         Метод принимает логин пользователя бота и возвращает список cookies из бд
         Для получения конкретного cookie обращение происходит по ключам:
-        Ссылка на группу: 'link_vk'
-        Вконтакте:'cookie_vk',
-        Twitter: 'cookie_tw'
+        Ссылка на группу: 'vk_link'
+        Вконтакте:'vk_cookie',
+        Twitter: 'tw_cookie'
         """
 
-        if not (await self.check(login)):
+        if not(await self.check(login)):
             await self.insert_new_user(login)
 
-        query = f"""SELECT link_vk, cookie_vk, cookie_tw FROM data_user WHERE tg_id='{login}'"""
+
+        query = f"""SELECT vk_link, vk_cookie, tw_cookie, tg_channel_id FROM data_user WHERE tg_id='{login}'"""
 
         cookies = await self.fetch(query)
         return cookies[0]
 
-    async def insert_link_vk(self, login: str, link: str):
+    async def insert_link_vk(self, login: int, link: str):
         query = f"""UPDATE data_user
-                   SET link_vk = '{link}
+                   SET vk_link = '{link}
                    WHERE tg_id = '{login}''"""
         await self.execute(query)
 
+
+    async def delete_link_vk(self, login: int):
+        query = f"""UPDATE data_user
+                   SET vk_link = NULL
+                   WHERE tg_id = '{login}'"""
+        await self.execute(query)
+
+
+    async def insert_tg_channel_id(self, login: int, chnl_id: str):
+        query = f"""UPDATE data_user
+                   SET tg_channel_id = '{chnl_id}
+                   WHERE tg_id = '{login}'"""
+        await self.execute(query)
+
+
+    async def delete_tg_channel_id(self, login: int):
+        query = f"""UPDATE data_user
+                   SET tg_channel_id = NULL
+                   WHERE tg_id = '{login}'"""
+        await self.execute(query)
+
+
+    async def delete_tw_cookie(self, login: int):
+        query = f"""UPDATE data_user
+                   SET tw_cookie = NULL
+                   WHERE tg_id = '{login}'"""
+        await self.execute(query)
+
+
+    async def delete_vk_cookie(self, login: int):
+        query = f"""UPDATE data_user
+                   SET vk_cookie = NULL
+                   WHERE tg_id = '{login}'"""
+        await self.execute(query)
+
+
     async def update_cookie(self, login, files: list = None, cookie_dict: dict = None):
-        if not (await self.check(login)):
+
+        if not(await self.check(login)):
             await self.insert_new_user(login)
         if cookie_dict is None and files is not None:
             cookie_dict: dict = self.get_cookies_on_file(files)
@@ -56,7 +95,6 @@ class DB_Users(BaseDB):
                     VALUES ('{login}')"""
 
         await self.execute(query)
-
     @staticmethod
     def get_cookies_on_file(files: list):
         cookies_dict = {}
