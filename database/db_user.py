@@ -16,6 +16,26 @@ class DB_Users(BaseDB):
         user = await self.fetch(query)
         return bool(len(user))
 
+
+    async def check_link_vk(self, login):
+        query = f"""SELECT vk_link FROM data_user WHERE tg_id='{login}'"""
+        n = "None"
+        user = await self.fetch(query)
+        if n in str(user):
+            return False
+        else:
+            return True
+
+    async def check_link_tw(self, login):
+        query = f"""SELECT tw_link FROM data_user WHERE tg_id='{login}'"""
+        n = "None"
+        user = await self.fetch(query)
+        if n in str(user):
+            return False
+        else:
+            return True
+
+
     async def get_data_user(self, login):
         """
         Метод принимает логин пользователя бота и возвращает список cookies из бд
@@ -28,22 +48,36 @@ class DB_Users(BaseDB):
         if not(await self.check(login)):
             await self.insert_new_user(login)
 
-
-        query = f"""SELECT vk_link, vk_cookie, tw_cookie, tg_channel_id FROM data_user WHERE tg_id='{login}'"""
+        query = f"""SELECT tw_link, vk_link, vk_cookie, tw_cookie, tg_channel_id FROM data_user WHERE tg_id='{login}'"""
 
         cookies = await self.fetch(query)
         return cookies[0]
 
+
     async def insert_link_vk(self, login: int, link: str):
         query = f"""UPDATE data_user
-                   SET vk_link = '{link}
-                   WHERE tg_id = '{login}''"""
+                   SET vk_link = '{link}'
+                   WHERE tg_id = '{login}'"""
         await self.execute(query)
 
 
     async def delete_link_vk(self, login: int):
         query = f"""UPDATE data_user
                    SET vk_link = NULL
+                   WHERE tg_id = '{login}'"""
+        await self.execute(query)
+
+
+    async def insert_link_tw(self, login: int, link: str):
+        query = f"""UPDATE data_user
+                   SET tw_link = '{link}'
+                   WHERE tg_id = '{login}''"""
+        await self.execute(query)
+
+
+    async def delete_link_tw(self, login: int):
+        query = f"""UPDATE data_user
+                   SET tw_link = NULL
                    WHERE tg_id = '{login}'"""
         await self.execute(query)
 
@@ -90,16 +124,20 @@ class DB_Users(BaseDB):
                     WHERE tg_id = '{login}'"""
         await self.execute(query)
 
+
     async def insert_new_user(self, login):
         query = f"""INSERT INTO data_user (tg_id)
                     VALUES ('{login}')"""
 
         await self.execute(query)
+
+
     @staticmethod
     def get_cookies_on_file(files: list):
+        path = "C:\\Users\\Endz\\Documents\\GitHub\\DistributionManager\\uploaded_cookies"
         cookies_dict = {}
         for file in files:
-            with open(file, 'r') as f:
+            with open(f"{path}\\{file}", 'r') as f:
                 cookies_dict[file.split('.')[0]] = f.readline()
         return cookies_dict
     

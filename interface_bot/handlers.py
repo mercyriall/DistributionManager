@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram import types, F, Router
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message
@@ -18,6 +20,7 @@ class User_input(StatesGroup):
     vk_inputing_cookie = State()
     vk_inputing_link = State()
     tw_inputing_cookie = State()
+    tw_inputing_link = State()
     tg_inputing_channel = State()
 
 
@@ -49,7 +52,7 @@ async def menu_handler(msg: Message):
 async def check_networks_handler(msg: Message):
     user = await db.get_data_user(msg.from_user.id)
 
-    usr_list = list(user[1:])
+    usr_list = list(user[2:])
 
     networks = []
 
@@ -74,10 +77,43 @@ async def create_post_handler(msg: Message):
 
 
 @router.message(StateFilter(None), F.text == "🔴 Вконтакте")
-async def vk_handler(msg: Message, state: FSMContext):
-    await msg.answer("Загрузите файл с куки данной соц. сети, формат куки должен быть \"*названиесоцсети*_cookie.txt\"."
-                     "При возникновении вопросов, читайте документацию.\n")
+async def vk_input_cookie(msg: Message, state: FSMContext):
+    await msg.answer("Загрузите файл с куки данной соц. сети, формат файла должен быть \".txt\"."
+                     "При возникновении вопросов, читайте документацию.\n", reply_markup=types.ReplyKeyboardRemove())
     await state.set_state(User_input.vk_inputing_cookie)
+
+
+@router.message(User_input.vk_inputing_cookie, F.document)
+async def vk_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
+    extension = '.txt'
+
+    if extension in str(msg.document.file_name):
+        path = "C:\\Users\\Endz\\Documents\\GitHub\\DistributionManager\\uploaded_cookies\\vk_cookie.txt"
+        await bot.download(
+            msg.document.file_id,
+            destination=path
+        )
+        await db.update_cookie(msg.from_user.id, ["vk_cookie.txt"])
+        await msg.answer("Куки успешно импортированы.", reply_markup=keyboards.kb_menu)
+        await state.clear()
+        if (await db.check_link_vk(msg.from_user.id)) is False:
+            await msg.answer("Введите ссылку на группу или страницу, с которой предполагается постинг.",
+                             reply_markup=types.ReplyKeyboardRemove())
+            await state.set_state(User_input.vk_inputing_link)
+    else:
+        await msg.answer("Что-то не так, вы точно отправили файл с расширением \".txt\"?")
+
+
+@router.message(User_input.vk_inputing_link)
+async def vk_link_inputed(msg: Message, state: FSMContext, bot: Bot):
+    start = 'https://vk.com/'
+    if start in str(msg.text):
+        await msg.answer(f"Вы успешно добавили ссылку: {msg.text}", reply_markup=keyboards.kb_menu)
+        await db.insert_link_vk(msg.from_user.id, msg.text)
+        await state.clear()
+    else:
+        await msg.answer("Что-то не так, попробуйте ввести ссылку ещё раз.")
+
 
 
 @router.message(F.text == "🟢 Вконтакте")
@@ -94,7 +130,7 @@ async def tg_handler(msg: Message):
 
 
 @router.message(F.text == "🟢 Telegram")
-async def vk_handler(msg: Message):
+async def tg_handler(msg: Message):
     await db.delete_tg_channel_id(msg.from_user.id)
     await msg.answer("Вы успешно отвязали эту соц сеть.",
                      reply_markup=keyboards.kb_menu)
