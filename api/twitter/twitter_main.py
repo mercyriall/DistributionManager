@@ -1,5 +1,7 @@
 import json
 import os
+import random
+import string
 import traceback
 
 import aiohttp
@@ -36,7 +38,7 @@ class TwitterTemplate():
             'user-agent': _user_agent,
             'x-csrf-token': csrf_token
         }
-    
+
     def get_id(self):
         return self._id
 
@@ -59,17 +61,50 @@ class TwitterDistribution(TwitterTemplate):
         pass
 
     async def check_cookie(self):
-        # tmp1, tmp2 = await self._take_page_id()
-        # if tmp1 is None and tmp2 is None:
-        #     return False
-        # return True
-        pass
+        # слайчайный набор букв и цифр длиной 10 символов
+        random_tweet = ''.join([random.choice(string.ascii_lowercase + string.digits) for i in range(10)])
+        tweet_id = await self.create_tweet(random_tweet)
+
+        if tweet_id is False:
+            return False
+        else:
+            if not await self._delete_tweet(tweet_id):
+                self.logging.error(f"ID={self.get_id()}"
+                                    f" (TWITTER) удаление поста")
+            self.logging.info(f"ID={self.get_id()}"
+                                    f" (TWITTER) проверка куки")
+            return True
+
+    async def _delete_tweet(self, tweet_id: str):
+        query_id = "VaenaVgh5q5ih7kvyVjgtg"
+        url_delete_tweet = f"https://twitter.com/i/api/graphql/{query_id}/DeleteTweet"
+
+        payload = {
+            "variables": {
+                "tweet_id": f"{tweet_id}",
+                "dark_request": False
+            },
+            "queryId": f"{query_id}"
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    url=url_delete_tweet,
+                    # proxy=self.get_proxy(),
+                    # ssl=False,
+                    json=payload,
+                    headers=self.get_headers()
+            ) as response:
+                if response.status == 200:
+                    return True
+                else:
+                    return False
 
     async def create_tweet(self, tweet_text: str = '', images: list = []):
         url_create_tweet = f'https://twitter.com/i/api/graphql/{_tweet_key}/CreateTweet'
         if tweet_text == '' and images == []: return False
         template_payload = take_payload_data('api/twitter/CreateTweet.json')
         payload = await self._prepare_payload(template_payload, tweet_text, images)
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -80,21 +115,21 @@ class TwitterDistribution(TwitterTemplate):
                         headers=self.get_headers()
                 ) as response:
                     if response.status == 200:
-                        try:
-                            data_dict = json.loads(await response.text())
-                            check_wrk = data_dict['errors']
-                            self.logging.error(f"ID={self.get_id()}"
-                                               f" (TWITTER) создание поста")
-                        except:
-                            self.logging.info(f"ID={self.get_id()} STATUS={response.status}"
-                                   f" (TWITTER) создание поста")
+                        data_dict = json.loads(await response.text())
+                        tweet_id = data_dict['data']['create_tweet']['tweet_results']['result']['rest_id'] # для удаления при проверке
+                        self.logging.info(f"ID={self.get_id()}"
+                                           f" (TWITTER) создание поста")
                     else:
                         self.logging.warning(f"ID={self.get_id()} STATUS={response.status}"
                                    f" (TWITTER) создание поста")
+                        return False
 
         except:
             self.logging.error(f"ID={self.get_id()}"
                                    f" (TWITTER) создание поста\n {traceback.format_exc()}")
+            return False
+
+        return tweet_id
 
     async def _prepare_payload(self, payload: dict, tweet_text: str, images: list):
         if tweet_text != '':

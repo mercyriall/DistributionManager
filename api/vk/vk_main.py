@@ -83,7 +83,7 @@ class VkDistribution(VkTemplate):
                                 received_id = (await response.text()).split("data-group_id")[1][0:20].split("\"")[1]
                                 link_type = "group"
                             except:
-                                self.logging.warning(f"ID={self.get_id()} неправильная ссылка {request_url}")
+                                self.logging.warning(f"ID={self.get_id()} (VK) неправильная ссылка {request_url}")
                                 return None, None
 
                         self.logging.info(f"ID={self.get_id()} (VK) запрос на получение информации страницы STATUS={response.status}")
@@ -269,9 +269,11 @@ class VkDistribution(VkTemplate):
                     else:
                         self.logging.warning(f"ID={self.get_id()} (VK)"
                                              f" STATUS={response.status} запрос на создание поста")
-                        return None
+                        return False
 
         except:
             self.logging.error(f"ID={self.get_id()}"
                                f" (VK) запрос на создание поста\n {traceback.format_exc()}")
-            return None
+            return False
+
+        return True

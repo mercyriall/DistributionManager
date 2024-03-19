@@ -18,6 +18,7 @@ twitter_necessary_cookies_for_reply = ["personalization_id", "att", "twid", "ct0
 def vk_cookie_refactor(cookies_base64: str):
     full_cookie = ''
     cookies = cookie_to_json(cookies_base64)
+    if cookies is None: return full_cookie
 
     for cookie in cookies:
         if cookie['name'] in vk_necessary_cookies_for_reply:
@@ -30,6 +31,7 @@ def twitter_cookie_refactor(cookies_base64):
     full_cookie = ''
     csrf_token = ''
     cookies = cookie_to_json(cookies_base64)
+    if cookies is None: return full_cookie, csrf_token
 
     for cookie in cookies:
         if cookie['name'] in twitter_necessary_cookies_for_reply:
