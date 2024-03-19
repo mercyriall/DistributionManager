@@ -48,7 +48,7 @@ class DB_Users(BaseDB):
         if not(await self.check(login)):
             await self.insert_new_user(login)
 
-        query = f"""SELECT tw_link, vk_link, vk_cookie, tw_cookie, tg_channel_id FROM data_user WHERE tg_id='{login}'"""
+        query = f"""SELECT vk_link, vk_cookie, tw_cookie, tg_channel_id FROM data_user WHERE tg_id='{login}'"""
 
         cookies = await self.fetch(query)
         return cookies[0]
@@ -68,23 +68,9 @@ class DB_Users(BaseDB):
         await self.execute(query)
 
 
-    async def insert_link_tw(self, login: int, link: str):
-        query = f"""UPDATE data_user
-                   SET tw_link = '{link}'
-                   WHERE tg_id = '{login}''"""
-        await self.execute(query)
-
-
-    async def delete_link_tw(self, login: int):
-        query = f"""UPDATE data_user
-                   SET tw_link = NULL
-                   WHERE tg_id = '{login}'"""
-        await self.execute(query)
-
-
     async def insert_tg_channel_id(self, login: int, chnl_id: str):
         query = f"""UPDATE data_user
-                   SET tg_channel_id = '{chnl_id}
+                   SET tg_channel_id = '{chnl_id}'
                    WHERE tg_id = '{login}'"""
         await self.execute(query)
 

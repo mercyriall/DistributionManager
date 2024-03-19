@@ -2,10 +2,20 @@ from aiogram import types
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 
+kb_instruction = types.ReplyKeyboardMarkup(
+    keyboard=[
+        [types.KeyboardButton(text="Инструкция по использованию🎓")]
+    ],
+    resize_keyboard=True,
+    input_field_placeholder="Воспользуйтесь меню ниже"
+)
+
+
 kb_menu = types.ReplyKeyboardMarkup(
     keyboard=[
         [types.KeyboardButton(text="Привязанные соц. сети📝")],
-        [types.KeyboardButton(text="Создать пост💬")]
+        [types.KeyboardButton(text="Создать пост💬")],
+        [types.KeyboardButton(text="Инструкция по использованию🎓")]
     ],
     resize_keyboard=True,
     input_field_placeholder="Воспользуйтесь меню ниже"
@@ -15,6 +25,17 @@ kb_menu = types.ReplyKeyboardMarkup(
 kb_networks = types.ReplyKeyboardMarkup(
     keyboard=[
         [types.KeyboardButton(text="Привязать соц. сеть🆕")],
+        [types.KeyboardButton(text="Отвязать соц. сеть🗑️")],
+        [types.KeyboardButton(text="Меню☰")]
+    ],
+    resize_keyboard=True,
+    input_field_placeholder="Воспользуйтесь меню ниже"
+)
+
+
+kb_change_link = types.ReplyKeyboardMarkup(
+    keyboard=[
+        [types.KeyboardButton(text="Поменять ссылку на страницу постинга")],
         [types.KeyboardButton(text="Отвязать соц. сеть🗑️")],
         [types.KeyboardButton(text="Меню☰")]
     ],
