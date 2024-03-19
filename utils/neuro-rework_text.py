@@ -1,13 +1,21 @@
-from langchain.schema import  HumanMessage, SystemMessage
+import os
+
+from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 
 # Авторизация в сервисе GigaChat
+from dotenv import load_dotenv
 
+load_dotenv()
 
-def generate_reviews(title):
-    chat = GigaChat(credentials='MzI3MGM5NmUtODNkOC00MjY1LWI5Yjgt'
-                                'OTc3MDc1YTQ5Y2IyOjM5OWU1NTJlLTFkM'
-                                'TMtNGE5Zi05ZGE5LTliMDNlNGRjZjc0ZA==',
+credentials = os.getenv('NEURO_CREDENTIALS')
+
+def rework_post(title):
+    """
+    GigaChat возвращает текст с таким же смыслом но другими словами
+    """
+
+    chat = GigaChat(credentials=f'{credentials}',
                     verify_ssl_certs=False)
     messages = [SystemMessage(
         content="Ты лучший в сфере СММ"),

@@ -4,13 +4,14 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from interface_bot.handlers import router
-from interface_bot.handlers import db
+from database.init_db import database as db
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 bot_token = os.getenv('BOT_TOKEN')
+
 
 async def main():
     logging.basicConfig(level=logging.INFO)
@@ -23,9 +24,7 @@ async def main():
 
     dp.include_router(router)
 
-    # Чтобы бот не обрабатывал апдейты, которые пришли до его запуска,
-    # только непосредственно те, что во время работы,
-    # то, что пришло во время "простоя" он удаляет
+    # удаляет запросы пришедшие в нерабочем состоянии
     await bot.delete_webhook(drop_pending_updates=True)
 
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())

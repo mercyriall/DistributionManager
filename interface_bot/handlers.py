@@ -6,31 +6,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.enums import ParseMode
 from aiogram.filters.chat_member_updated import \
     ChatMemberUpdatedFilter, IS_NOT_MEMBER, ADMINISTRATOR
+
 import interface_bot.keyboards as keyboards
-from database.db_user import DB_Users
+from utils.check_link import check_linked_soc
+from database.init_db import database as db
+
 
 router = Router()
 
-db = DB_Users()
-
-
-async def check_linked_soc(msg: Message):
-    user = await db.get_data_user(msg.from_user.id)
-
-    usr_list = list(user[1:])
-
-    networks = []
-
-    for elem in usr_list:
-        if bool(elem) is True:
-            networks.append(1)
-        else:
-            networks.append(0)
-    return networks
-
-
 greetings = ["Привет", "привет", "Privet", "privet", "qq", "зкшмуе", "Зкшмуе", "Ghbdtn", "ghbdtn"]
-
 
 channel_start = "-100"
 
@@ -84,8 +68,8 @@ async def check_networks_handler(msg: Message):
     networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(resize_keyboard=True,
-                                                                                 input_field_placeholder="Воспользуйтесь меню ниже"))
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 
 @router.message(F.text == "Создать пост💬")
@@ -116,7 +100,7 @@ async def vk_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
     extension = '.txt'
 
     if extension in str(msg.document.file_name):
-        path = "C:\\Users\\Endz\\Documents\\GitHub\\DistributionManager\\uploaded_cookies\\vk_cookie.txt"
+        path = "database/uploaded_cookies/vk_cookie.txt"
         await bot.download(
             msg.document.file_id,
             destination=path
@@ -149,8 +133,8 @@ async def vk_link_inputed(msg: Message, state: FSMContext, bot: Bot):
         networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
 
         await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(resize_keyboard=True,
-                                                                                                  input_field_placeholder="Воспользуйтесь меню ниже"))
+                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                             resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
     else:
         await msg.answer("Что-то не так, попробуйте ввести ссылку ещё раз.")
 
@@ -170,8 +154,8 @@ async def vk_unsigning(msg: Message, state: FSMContext):
     networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(resize_keyboard=True,
-                                                                                              input_field_placeholder="Воспользуйтесь меню ниже"))
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
     await state.clear()
 
 
@@ -221,8 +205,8 @@ async def tg_handler(msg: Message):
     networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(resize_keyboard=True,
-                                                                                              input_field_placeholder="Воспользуйтесь меню ниже"))
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 
 @router.message(StateFilter(None), F.text == "🔴 Twitter")
@@ -237,7 +221,7 @@ async def tw_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
     extension = '.txt'
 
     if extension in str(msg.document.file_name):
-        path = "C:\\Users\\Endz\\Documents\\GitHub\\DistributionManager\\uploaded_cookies\\tw_cookie.txt"
+        path = "database/uploaded_cookies/vk_cookie.txt"
         await bot.download(
             msg.document.file_id,
             destination=path
@@ -248,8 +232,8 @@ async def tw_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
         networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
 
         await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(resize_keyboard=True,
-                                                                                                  input_field_placeholder="Воспользуйтесь меню ниже"))
+                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                             resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
     else:
         await msg.answer("Что-то не так, вы точно отправили файл с расширением \".txt\"?")
 
@@ -261,8 +245,8 @@ async def tw_handler(msg: Message):
     networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(resize_keyboard=True,
-                                                                                              input_field_placeholder="Воспользуйтесь меню ниже"))
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 
 @router.message()
