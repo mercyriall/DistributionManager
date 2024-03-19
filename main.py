@@ -16,7 +16,7 @@ bot_token = os.getenv('BOT_TOKEN')
 async def main():
     logging.basicConfig(level=logging.INFO)
 
-    db.init_pool()
+    await db.init_pool()
 
     bot = Bot(token=bot_token)
 
