@@ -34,6 +34,11 @@ class UsersDB(BaseDB):
         else:
             return True
 
+    async def get_tg_channel_id(self, login):
+        query = f"""SELECT tg_channel_id FROM data_user WHERE tg_id='{login}'"""
+        user = await self.fetch(query)
+        return str(user)
+
     async def get_data_user(self, login):
         """
         Метод принимает логин пользователя бота и возвращает список cookies из бд
