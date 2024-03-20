@@ -1,3 +1,3 @@
-from database.db_user import DB_Users
+from database.db_user import UsersDB
 
-database = DB_Users()
+database = UsersDB()

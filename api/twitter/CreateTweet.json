@@ -1,15 +1,15 @@
 {
   "variables": {
-    "tweet_text": "",
+    "tweet_text": "TEXT",
     "dark_request": false,
     "media": {
       "media_entities": [
         {
-          "media_id": "1768792028718977024",
+          "media_id": "ID",
           "tagged_users": []
         },
         {
-          "media_id": "1768792028815527936",
+          "media_id": "ID",
           "tagged_users": []
         }
       ],
@@ -38,5 +38,5 @@
     "responsive_web_graphql_timeline_navigation_enabled": true,
     "responsive_web_enhance_cards_enabled": false
   },
-  "queryId": ""
+  "queryId": "KEY"
 }

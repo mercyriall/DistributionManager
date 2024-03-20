@@ -20,15 +20,19 @@ _proxy_token = os.getenv('PROXY_TOKEN')
 _proxy_geo = os.getenv('GEO_CODE')
 _user_agent = 'Mozilla/5.0'
 
-class VkTemplate():
-    def __init__(self, id: str, cookie: str, nickname: str):
-        self._id = id
-        self._proxy = f'http://{_proxy_token}:sessionId={id}&render=false&super=true&regionalGeoCode={_proxy_geo}@proxy.scrape.do:8080'
+
+class VkTemplate:
+    def __init__(self, telegram_user_id: str, cookie: str, nickname: str):
+        self._telegram_user_id = telegram_user_id
+        self._proxy = (f'http://{_proxy_token}:'
+                       f'sessionId={telegram_user_id}&render=false&super=true&regionalGeoCode={_proxy_geo}'
+                       f'@proxy.scrape.do:8080')
         self._nickname = nickname
         self._headers = self._request_headers_create(cookie)
         self.logging = Logging()
 
-    def _request_headers_create(self, cookie_base64: str):
+    @staticmethod
+    def _request_headers_create(cookie_base64: str):
         cookies_dictionary = vk_cookie_refactor(cookie_base64)
 
         return {
@@ -38,22 +42,101 @@ class VkTemplate():
         }
 
     def get_id(self):
-        return self._id
+        return self._telegram_user_id
 
     def get_proxy(self):
-
         return self._proxy
+
     def get_nickname(self):
         return self._nickname
 
     def get_headers(self):
         return self._headers
+
     def set_headers(self, cookie_base64):
         self._request_headers_create(cookie_base64)
 
+
 class VkDistribution(VkTemplate):
-    def __init__(self, id: str, cookie: str, nickname: str):
-        super().__init__(id, cookie, nickname)
+    """
+    telegram_user_id - unique
+    !cookie format - base64 (decode/encode in /utils/cookie_format_change)
+    nickname - only nickname, not a full link
+    """
+
+    __text_length_limit = 10000
+    __images_count_limit = 10
+
+    def __init__(self, telegram_user_id: str, cookie: str, nickname: str):
+        super().__init__(telegram_user_id, cookie, nickname)
+
+    def get_text_limit(self):
+        return self.__text_length_limit
+
+    def get_images_limit(self):
+        return self.__images_count_limit
+
+    async def create_post(self, post_text: str = '', images: list = []):
+        """
+        Ограничения:
+            длина текста:39020(профиль), 75776(группа) с картинками хз меняется ли что - то
+            лучше бы ставить ограниение сильно меньше (что я и сделал)
+            количество картинок: 10 (как будто бы тоже можно поменьше выставить, но поставил 10)
+        Принимает: строку + массив картинок
+            можно только картинки или только текст
+            Также можно ничего не передавать
+        Возвращает: True/False + log
+            False + "Вы не заполнили пост"
+            False + "Превысили лимит длины текста/кол-во изображений"
+            False + "Простите, временные неполадки в работе" (ошибка не зависит от пользователя)
+            False + "Неудачная попытка, статус ошибки <status>" (ошибка в запросе, с аварийным кодом,
+            проблема с куки/ссылкой или в самой программе)
+            False + "Куки плохие" (ошибка в запросе, но код 200(успешный), значит плохие куки 90%
+             поэтому сообщение вернется про них)
+            True + "Пост создан"
+        """
+
+        url_create_post = 'https://vk.com/al_wall.php?act=post'
+
+        if post_text == '' and images == []: return False, "Вы не заполнили пост"
+        if len(post_text) > self.__text_length_limit\
+            or len(images) > self.__images_count_limit: return False, "Превысили лимит длины текста/кол-во изображений"
+
+        body = await self._create_post_preparation(post_text, images)
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                        url=url_create_post,
+                        # proxy=self.get_proxy(),
+                        # ssl=False,
+                        json=body,
+                        headers=self.get_headers()
+                ) as response:
+                    if response.status == 200:
+
+                        # проверка действительно ли запрос успешный
+                        try:
+                            check_wrk = (await response.text()).split('statsMeta')[0][200]
+                        except:
+                            self.logging.warning(f"ID={self.get_id()} (VK)"
+                                                 f" плохие куки, запрос на создание поста")
+                            return False, "Куки плохие"
+
+                        self.logging.info(f"ID={self.get_id()} (VK)"
+                                          f" STATUS={response.status} запрос на создание поста")
+
+                    else:
+                        self.logging.warning(f"ID={self.get_id()} (VK)"
+                                             f" STATUS={response.status} запрос на создание поста")
+                        return False, f"Неудачная попытка, статус ошибки: {response.status}"
+
+        except:
+            self.logging.error(f"ID={self.get_id()}"
+                               f" (VK) запрос на создание поста\n {traceback.format_exc()}")
+            return False, "Простите, временные неполадки в работе"
+
+        return True, "Пост создан"
 
     async def check_cookie_and_link(self):
         tmp1, tmp2 = await self._take_page_id()
@@ -86,13 +169,16 @@ class VkDistribution(VkTemplate):
                                 self.logging.warning(f"ID={self.get_id()} (VK) неправильная ссылка {request_url}")
                                 return None, None
 
-                        self.logging.info(f"ID={self.get_id()} (VK) запрос на получение информации страницы STATUS={response.status}")
+                        self.logging.info(f"ID={self.get_id()} (VK)"
+                                          f" запрос на получение информации страницы STATUS={response.status}")
                     else:
-                        self.logging.warning(f"ID={self.get_id()} (VK) запрос на получение информации страницы STATUS={response.status}")
+                        self.logging.warning(f"ID={self.get_id()} (VK)"
+                                             f" запрос на получение информации страницы STATUS={response.status}")
                         return None, None
 
         except:
-            self.logging.error(f"ID={self.get_id()} (VK) запрос на получение информации страницы\n {traceback.format_exc()}")
+            self.logging.error(f"ID={self.get_id()} (VK)"
+                               f" запрос на получение информации страницы\n {traceback.format_exc()}")
             return None, None
 
         return link_type, received_id
@@ -124,9 +210,11 @@ class VkDistribution(VkTemplate):
                 ) as response:
                     if response.status == 200:
                         token = (await response.text()).split('token=')[1][0:411].split("'")[0]
-                        self.logging.info(f"ID={self.get_id()} (VK) получение токена ACC={acc_id} STATUS={response.status}")
+                        self.logging.info(f"ID={self.get_id()} (VK) получение токена"
+                                          f" ACC={acc_id} STATUS={response.status}")
                     else:
-                        self.logging.warning(f"ID={self.get_id()} (VK) получение токена ACC={acc_id} STATUS={response.status}")
+                        self.logging.warning(f"ID={self.get_id()} (VK) получение токена"
+                                             f" ACC={acc_id} STATUS={response.status}")
 
         except:
             self.logging.error(f"ID={self.get_id()} (VK) получение токена ACC={acc_id}")
@@ -189,7 +277,7 @@ class VkDistribution(VkTemplate):
                 # view source + url-encode + реплейсами убираем пробелы и ' переводим в "
                 body = urllib.parse.urlencode(payload).replace("+", "").replace("%27", "%22")
 
-                async with aiohttp.ClientSession() as session:
+                async with (aiohttp.ClientSession() as session):
                     async with session.post(
                             url=url_images_id,
                             # proxy=self.get_proxy(),
@@ -198,7 +286,9 @@ class VkDistribution(VkTemplate):
                             headers=self.get_headers()
                     ) as response:
                         if response.status == 200:
-                            image_id = str(payload['mid']) + (await response.text()).split(str(payload['mid']))[1].split('"')[0]
+                            image_id = str(payload['mid']) +\
+                                       (await response.text()).split(str(payload['mid']))[1].split('"')[0]
+
                             images_id.append(image_id)
                             self.logging.info(f"ID={self.get_id()} (VK) получение id картинки"
                                               f" IMG_ID={image_id} TEG={teg} STATUS={response.status}")
@@ -243,37 +333,3 @@ class VkDistribution(VkTemplate):
 
         body = urllib.parse.urlencode(ref_payload)
         return body
-
-    async def create_post(self, post_text: str = '', images: list = []):
-        url_create_post = 'https://vk.com/al_wall.php?act=post'
-        if post_text == '' and images == []: return False
-
-        body = await self._create_post_preparation(post_text, images)
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                        url=url_create_post,
-                        # proxy=self.get_proxy(),
-                        # ssl=False,
-                        json=body,
-                        headers=self.get_headers()
-                ) as response:
-                    if response.status == 200:
-                        # проверка действительно ли запрос успешный
-                        check_wrk = (await response.text()).split('statsMeta')[0][200]
-
-                        self.logging.info(f"ID={self.get_id()} (VK)"
-                                          f" STATUS={response.status} запрос на создание поста")
-
-                    else:
-                        self.logging.warning(f"ID={self.get_id()} (VK)"
-                                             f" STATUS={response.status} запрос на создание поста")
-                        return False
-
-        except:
-            self.logging.error(f"ID={self.get_id()}"
-                               f" (VK) запрос на создание поста\n {traceback.format_exc()}")
-            return False
-
-        return True
