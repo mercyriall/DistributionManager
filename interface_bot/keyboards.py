@@ -4,7 +4,8 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 kb_instruction = types.ReplyKeyboardMarkup(
     keyboard=[
-        [types.KeyboardButton(text="Инструкция по использованию🎓")]
+        [types.KeyboardButton(text="Инструкция по использованию🎓")],
+        [types.KeyboardButton(text="Меню☰")]
     ],
     resize_keyboard=True,
     input_field_placeholder="Воспользуйтесь меню ниже"
