@@ -64,7 +64,6 @@ async def menu_handler(msg: Message, state: FSMContext):
 
 @router.message(F.text == "Привязанные соц. сети📝")
 async def check_networks_handler(msg: Message):
-
     networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
@@ -175,7 +174,6 @@ async def tg_handler(msg: Message, state: FSMContext):
 
 @router.message(UserInput.tg_inputing_channel)
 async def tg_inputer(msg: Message, state: FSMContext):
-
     if msg.forward_origin:
         await db.insert_tg_channel_id(msg.from_user.id, str(msg.forward_origin.chat.id))
         await msg.answer("Id чата тг привязан, теперь добавьте бота в администраторы этого канала.")

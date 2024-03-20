@@ -3,10 +3,11 @@ import os
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from dotenv import load_dotenv
+
 from interface_bot.handlers import router
 from database.init_db import database as db
 
-from dotenv import load_dotenv
 
 load_dotenv()
 

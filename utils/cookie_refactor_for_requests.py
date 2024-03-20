@@ -14,8 +14,11 @@ twitter_necessary_cookies_for_reply = ["personalization_id", "att", "twid", "ct0
                      "guest_id_marketing", "_ga", "kdt", "lang", "gt", "_gid", "guest_id_ads"]
 
 
-#переводим base64 формат в json и перерабатываем нужные куки в словарь
 def vk_cookie_refactor(cookies_base64: str):
+    """
+    переводим base64 формат в json и перерабатываем нужные куки в словарь
+    """
+
     full_cookie = ''
     cookies = cookie_to_json(cookies_base64)
     if cookies is None: return full_cookie
@@ -27,7 +30,12 @@ def vk_cookie_refactor(cookies_base64: str):
 
     return full_cookie
 
+
 def twitter_cookie_refactor(cookies_base64):
+    """
+    переводим base64 формат в json и перерабатываем нужные куки в словарь
+    """
+
     full_cookie = ''
     csrf_token = ''
     cookies = cookie_to_json(cookies_base64)

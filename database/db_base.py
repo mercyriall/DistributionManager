@@ -2,6 +2,7 @@ import os
 import asyncpg
 from dotenv import load_dotenv
 
+
 class BaseDB:
     _instance = None
 
