@@ -312,7 +312,7 @@ class VkDistribution(VkTemplate):
         return payload
 
     async def _create_post_preparation(self, post_text: str, images: list): # формируем тело запроса
-        images_id = None
+        images_id = []
         teg, acc_id = await self._take_page_id()
 
         if teg == 'user':
@@ -330,6 +330,6 @@ class VkDistribution(VkTemplate):
 
         if images != []: images_id = await self._take_images_id(images, teg, acc_id)
         if images_id != []: await self._insert_image_payload(ref_payload, images_id, teg)
-
+        
         body = urllib.parse.urlencode(ref_payload)
         return body
