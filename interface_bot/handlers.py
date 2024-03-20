@@ -14,7 +14,7 @@ from database.init_db import database as db
 
 router = Router()
 
-greetings = ["Привет", "привет", "Privet", "privet", "qq", "зкшмуе", "Зкшмуе", "Ghbdtn", "ghbdtn"]
+greetings = ["привет", "privet", "qq", "зкшмуе", "ghbdtn"]
 
 channel_start = "-100"
 
@@ -39,7 +39,7 @@ async def start_handler(msg: Message):
                      reply_markup=keyboards.kb_menu)
 
 
-@router.message(F.text.in_(greetings))
+@router.message(F.text.lower().in_(greetings))
 async def start_handler(msg: Message):
     if await db.check(msg.from_user.id) is False:
         await db.insert_new_user(msg.from_user.id)
