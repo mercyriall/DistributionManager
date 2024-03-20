@@ -1,5 +1,6 @@
 import json
 
+
 def vk_account_post_details(payload, account_id, post_text):
     payload['to_id'] = account_id
     payload['Message'] = post_text
@@ -11,9 +12,6 @@ def vk_group_post_details(payload, group_id, post_text):
     payload['Message'] = post_text
     payload['_ads_group_id'] = group_id
     return payload
-
-def vk_insert_image():
-    pass
 
 
 def take_payload_data(payload_file_path):
