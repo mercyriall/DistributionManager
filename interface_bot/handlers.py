@@ -51,8 +51,8 @@ async def start_handler(msg: Message):
 @router.message(F.text == "Инструкция по использованию🎓")
 async def menu_handler(msg: Message, state: FSMContext):
     await state.clear()
-    await msg.answer("<u>Инструкция по использованию:</u>",
-                     reply_markup=keyboards.kb_menu,parse_mode=ParseMode.HTML)
+    await msg.answer("Что бы вы хотели узнать?",
+                     reply_markup=keyboards.kb_instruction)
 
 
 @router.message(F.text == "Меню☰")
@@ -75,16 +75,32 @@ async def check_networks_handler(msg: Message):
 async def create_post_handler(msg: Message, state: FSMContext):
     # тут должна быть проверка на привязанные аккаунты
     await msg.answer("Напиши пост в следующем сообщении и прикрепи картинки, если есть.",
-                     reply_markup=types.ReplyKeyboardRemove())
+                     reply_markup=keyboards.kb_cancel)
     await state.set_state(UserInput.posting)
 
 
+@router.message(UserInput.posting, F.text == "Отменить отправку❌")
+async def cancel(msg: Message, state: FSMContext, bot: Bot):
+    await state.clear()
+    await msg.answer("Вы отменили создание поста.",
+                     reply_markup=keyboards.kb_menu)
+
+
 @router.message(UserInput.posting)
-async def posting(msg: Message, state: FSMContext):
-    json_f = msg.model_dump_json()
-    print(json_f)
+async def posting(msg: Message, state: FSMContext, bot: Bot):
+    path = "C:\\Users\\Endz\\Documents\\GitHub\\DistributionManager\\utils\\photosForPost"
+    post_images = []
+    # print(path)
+    post_text = msg.text
+    await bot.download(
+        msg.photo[-1],
+        destination=f"{path}\\{msg.photo[-1].file_id}.jpg"
+    )
+    # короче я написал тут сохранение картинок и список с названиями. Перепиши пж адекватно названия,
+    # мб подумай как для каждого юзера это делать норм, ну и сам постинг, ёпт
+    post_images.append(f"{msg.photo[-1].file_id}.jpg")
     await msg.answer("Норм.",
-                     reply_markup=types.ReplyKeyboardRemove())
+                     reply_markup=keyboards.kb_menu)
 
 
 @router.message(StateFilter(None), F.text == "🔴 Вконтакте")

@@ -2,9 +2,18 @@ from aiogram import types
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 
+kb_cancel = types.ReplyKeyboardMarkup(
+    keyboard=[
+        [types.KeyboardButton(text="Отменить отправку❌")]
+    ],
+    resize_keyboard=True
+)
+
+
 kb_instruction = types.ReplyKeyboardMarkup(
     keyboard=[
-        [types.KeyboardButton(text="Инструкция по использованию🎓")],
+        [types.KeyboardButton(text="Как получить куки")],
+        [types.KeyboardButton(text="Как привязать соц. сети")],
         [types.KeyboardButton(text="Меню☰")]
     ],
     resize_keyboard=True,
