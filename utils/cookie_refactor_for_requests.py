@@ -9,6 +9,7 @@ vk_necessary_cookies_for_reply = ['remixdt', 'remixlang', 'remixstlid', 'remixst
                                'remixscreen_height', 'remixua', 'remixnp', 'remixgp', 'remixcurr_audio',
                                'remixscreen_winzoom', 'remixpuad', 'remixnsid', 'remixsid', 'tmr_detect']
 
+#vk_necessary_cookies_for_reply = ['remixnsid', 'remixsid']
 
 twitter_necessary_cookies_for_reply = ["personalization_id", "att", "twid", "ct0", "auth_token", "guest_id", "g_state",
                      "guest_id_marketing", "_ga", "kdt", "lang", "gt", "_gid", "guest_id_ads"]
