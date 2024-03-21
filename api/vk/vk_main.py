@@ -9,7 +9,6 @@ import aiohttp
 from dotenv import load_dotenv
 
 from logs.logging_main import Logging
-from utils.cookie_format_change import cookie_to_base64
 from utils.cookie_refactor_for_requests import vk_cookie_refactor
 from utils.create_request_parameters import take_payload_data, vk_account_post_details, vk_group_post_details
 
@@ -17,7 +16,7 @@ from utils.create_request_parameters import take_payload_data, vk_account_post_d
 load_dotenv()
 
 _proxy_token = os.getenv('PROXY_TOKEN')
-_proxy_geo = os.getenv('GEO_CODE')
+_proxy_geo = 'ru'
 _user_agent = 'Mozilla/5.0'
 
 
@@ -25,21 +24,30 @@ class VkTemplate:
     def __init__(self, telegram_user_id: str, cookie: str, nickname: str):
         self._telegram_user_id = telegram_user_id
         self._proxy = (f'http://{_proxy_token}:'
-                       f'sessionId={telegram_user_id}&render=false&super=true&regionalGeoCode={_proxy_geo}'
+                       f'render=true&super=true&geoCode={_proxy_geo}'
+                       f'&setCookies={self._proxy_cookie_create(self._request_cookie_create(cookie))}'
                        f'@proxy.scrape.do:8080')
         self._nickname = nickname
-        self._headers = self._request_headers_create(cookie)
+        self._headers = self._request_headers_create(self._request_cookie_create(cookie))
         self.logging = Logging()
 
     @staticmethod
-    def _request_headers_create(cookie_base64: str):
-        cookies_dictionary = vk_cookie_refactor(cookie_base64)
-
+    def _request_headers_create(cookie: str):
         return {
             'content-type': 'application/x-www-form-urlencoded',
-            'cookie': cookies_dictionary,
+            'cookie': cookie,
             'user-agent': _user_agent
         }
+
+    @staticmethod
+    def _request_cookie_create(cookie_base64: str):
+        cookies_dictionary = vk_cookie_refactor(cookie_base64)
+        return cookies_dictionary
+
+    @staticmethod
+    def _proxy_cookie_create(cookie: str):
+        cookie = urllib.parse.quote(cookie)
+        return cookie.replace(" ", "")
 
     def get_id(self):
         return self._telegram_user_id
@@ -101,20 +109,18 @@ class VkDistribution(VkTemplate):
         if post_text == '' and images == []: return False, "Вы не заполнили пост"
         if len(post_text) > self.__text_length_limit\
             or len(images) > self.__images_count_limit: return False, "Превысили лимит длины текста/кол-во изображений"
-
         body = await self._create_post_preparation(post_text, images)
 
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
+                        ssl=False,
+                        #proxy=self.get_proxy(),
                         url=url_create_post,
-                        # proxy=self.get_proxy(),
-                        # ssl=False,
                         json=body,
                         headers=self.get_headers()
                 ) as response:
                     if response.status == 200:
-
                         # проверка действительно ли запрос успешный
                         try:
                             check_wrk = (await response.text()).split('statsMeta')[0][200]
@@ -151,10 +157,12 @@ class VkDistribution(VkTemplate):
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                         url=request_url,
-                        # proxy=self.get_proxy(),
-                        # ssl=False,
-                        headers=self.get_headers()
+                        headers=self.get_headers(),
+                        #proxy=self.get_proxy(),
+                        #ssl=False
                 ) as response:
+                    with open('test.html', 'w', encoding='UTF-8') as f:
+                        f.write(await response.text())
                     if response.status == 200:
                         try:
                             # профиль id
@@ -163,7 +171,7 @@ class VkDistribution(VkTemplate):
                         except:
                             # группа id
                             try:
-                                received_id = (await response.text()).split("data-group_id")[1][0:20].split("\"")[1]
+                                received_id = (await response.text()).split("group_id")[1].split(":")[1].split(",")[0]
                                 link_type = "group"
                             except:
                                 self.logging.warning(f"ID={self.get_id()} (VK) неправильная ссылка {request_url}")
@@ -203,10 +211,10 @@ class VkDistribution(VkTemplate):
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                         url=url_get_token,
-                        # proxy=self.get_proxy(),
-                        # ssl=False,
                         headers=self.get_headers(),
-                        json=body
+                        json=body,
+                        #proxy=self.get_proxy(),
+                        ssl=False
                 ) as response:
                     if response.status == 200:
                         token = (await response.text()).split('token=')[1][0:411].split("'")[0]
@@ -237,9 +245,9 @@ class VkDistribution(VkTemplate):
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                             url=url_get_hash,
-                            # proxy=self.get_proxy(),
-                            # ssl=False,
-                            data=files
+                            data=files,
+                            #proxy=self.get_proxy(),
+                            ssl=False
                     ) as response:
                         if response.status == 200:
                             # проверка правильно ли прошел запрос
@@ -280,10 +288,10 @@ class VkDistribution(VkTemplate):
                 async with (aiohttp.ClientSession() as session):
                     async with session.post(
                             url=url_images_id,
-                            # proxy=self.get_proxy(),
-                            # ssl=False,
                             json=body,
-                            headers=self.get_headers()
+                            headers=self.get_headers(),
+                            #proxy=self.get_proxy(),
+                            ssl=False
                     ) as response:
                         if response.status == 200:
                             image_id = str(payload['mid']) +\
