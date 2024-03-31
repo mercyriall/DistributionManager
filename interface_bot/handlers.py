@@ -1,20 +1,28 @@
+import asyncio
+
+from aiogram.types.input_file import FSInputFile
 from aiogram import types, F, Router, Bot
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message
 from aiogram.filters import Command, StateFilter
+from aiogram.utils.media_group import MediaGroupBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.enums import ParseMode
 from aiogram.filters.chat_member_updated import \
     ChatMemberUpdatedFilter, IS_NOT_MEMBER, ADMINISTRATOR
+import os
 
 import interface_bot.keyboards as keyboards
-from utils.check_link import check_linked_soc
+from utils.check_link import check_linked_soc_list
+from utils.check_link import check_for_buttons
+from utils.post_functions import post_tg
 from database.init_db import database as db
-
 
 router = Router()
 
 greetings = ["привет", "privet", "qq", "зкшмуе", "ghbdtn"]
+
+networks = ["Вконтакте", "Twitter", "Telegram"]
 
 channel_start = "-100"
 
@@ -27,11 +35,18 @@ class UserInput(StatesGroup):
     tw_unsigning = State()
     tg_inputing_channel = State()
     tg_adding_admin = State()
+    getting_images = State()
+    gathering_info = State()
     posting = State()
+    posted = State()
+    images_for_post_dict ={}
+    text_for_post_dict = {}
+    posting_socs_dict = {}
 
 
 @router.message(Command('start'))
 async def start_handler(msg: Message):
+    print(msg.model_dump_json())
     if await db.check(msg.from_user.id) is False:
         await db.insert_new_user(msg.from_user.id)
 
@@ -51,8 +66,8 @@ async def start_handler(msg: Message):
 @router.message(F.text == "Инструкция по использованию🎓")
 async def menu_handler(msg: Message, state: FSMContext):
     await state.clear()
-    await msg.answer("<u>Инструкция по использованию:</u>",
-                     reply_markup=keyboards.kb_menu,parse_mode=ParseMode.HTML)
+    await msg.answer("Что бы вы хотели узнать?",
+                     reply_markup=keyboards.kb_instruction)
 
 
 @router.message(F.text == "Меню☰")
@@ -64,27 +79,184 @@ async def menu_handler(msg: Message, state: FSMContext):
 
 @router.message(F.text == "Привязанные соц. сети📝")
 async def check_networks_handler(msg: Message):
-    networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
+    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                          resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
-
 
 @router.message(F.text == "Создать пост💬")
 async def create_post_handler(msg: Message, state: FSMContext):
-    # тут должна быть проверка на привязанные аккаунты
-    await msg.answer("Напиши пост в следующем сообщении и прикрепи картинки, если есть.",
-                     reply_markup=types.ReplyKeyboardRemove())
+    await msg.answer("Окей, вы планировали прикреплять картинки к посту?\n"
+                     "Если да, то отправьте картинки следующим сообщением"
+                     "и нажмите кнопку \"Продолжить заполнять пост\","
+                     "когда будет загружена последняя картинка.\n"
+                     "Если нет - нажми на кнопку \"Нет\"",
+                     reply_markup=keyboards.kb_no)
+    await state.set_state(UserInput.getting_images)
+
+
+@router.message(UserInput.getting_images, F.photo)
+async def cancel(msg: Message, state: FSMContext, bot: Bot):
+    await state.clear()
+    if msg.from_user.id not in UserInput.images_for_post_dict:
+        UserInput.images_for_post_dict[msg.from_user.id] = [msg.photo[-1].file_id]
+    else:
+        UserInput.images_for_post_dict[msg.from_user.id].append(msg.photo[-1].file_id)
+    UserInput.images_for_post_dict[msg.from_user.id] = msg.photo[-1].file_id
+    path = "C:/Users/Endz/Documents/GitHub/DistributionManager/utils/photosForPost/"
+    os.chdir(path)
+    if not os.path.isdir(str(msg.from_user.id)):
+        os.mkdir(str(msg.from_user.id))
+        print('папка создана')
+    await bot.download(
+        msg.photo[-1],
+        destination=f"{path}/{msg.from_user.id}/{msg.photo[-1].file_id}.jpg"
+    )
+    await msg.answer("Картинка загружена.", reply_markup=keyboards.kb_continue)
+    print(UserInput.images_for_post_dict)
+
+
+@router.message(F.text == "Продолжить заполнять пост✏️")
+async def getting_info(msg: Message, state: FSMContext):
+    await state.set_state(UserInput.gathering_info)
+    await msg.answer("Напишите текст поста:",
+                         reply_markup=keyboards.kb_cancel)
+
+
+@router.message(UserInput.getting_images, F.text != "Нет❌")
+async def cancel(msg: Message, state: FSMContext):
+    await msg.answer("Не понимаю вас вы хотите загрузить картинки?Если да, то загружайте картинки для поста и "
+                     "нажмите \"Продолжить заполнять пост\" как загрузите последнюю.",
+                     reply_markup=keyboards.kb_cancel)
+
+
+@router.message(UserInput.getting_images, F.text == "Нет❌")
+async def cancel(msg: Message, state: FSMContext):
+    await state.clear()
+    await msg.answer("Хорошо, двигаемся дальше. Напиши текст поста в следующем сообщении.",
+                     reply_markup=keyboards.kb_cancel)
+    await state.set_state(UserInput.gathering_info)
+
+
+@router.message(UserInput.gathering_info, F.text == "Отменить отправку❌")
+async def cancel(msg: Message, state: FSMContext, bot: Bot):
+    path = f"C:/Users/Endz/Documents/GitHub/DistributionManager/utils/photosForPost/{str(msg.from_user.id)}"
+    os.chdir(path)
+    for paths, dirs, files in os.walk(path):
+        for file in files:
+            os.remove(file)
+        break
+    await state.clear()
+    await msg.answer("Вы отменили создание поста.",
+                     reply_markup=keyboards.kb_menu)
+
+
+@router.message(UserInput.gathering_info, F.text =="🔴 Вконтакте")
+async def gathering_info(msg: Message, bot: Bot):
+    await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
+    await bot.delete_message(msg.from_user.id, (msg.message_id))
+    for elem in UserInput.posting_socs_dict:
+        if elem == "Вконтакте":
+            UserInput.posting_socs_dict[elem] = 1
+    await msg.answer(
+        "Выберите соц. сети, в которых хотите запостить:\nЧтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
+        reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
+            resize_keyboard=True,
+            input_field_placeholder="Воспользуйтесь меню ниже"))
+
+@router.message(UserInput.gathering_info, F.text == "🟢 Вконтакте")
+async def gathering_info(msg: Message, bot: Bot):
+    await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
+    await bot.delete_message(msg.from_user.id, (msg.message_id))
+    for elem in UserInput.posting_socs_dict:
+        if elem == "Вконтакте":
+            UserInput.posting_socs_dict[elem] = 0
+    await msg.answer(
+        "Выберите соц. сети, в которых хотите запостить:\nЧтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
+        reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
+            resize_keyboard=True,
+            input_field_placeholder="Воспользуйтесь меню ниже"))
+
+@router.message(UserInput.gathering_info, F.text == "🔴 Telegram")
+async def gathering_info(msg: Message, bot: Bot):
+    await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
+    await bot.delete_message(msg.from_user.id, msg.message_id)
+    for elem in UserInput.posting_socs_dict:
+        if elem == "Telegram":
+            UserInput.posting_socs_dict[elem] = 1
+    await msg.answer(
+        "Выберите соц. сети, в которых хотите запостить:\nЧтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
+        reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
+            resize_keyboard=True,
+            input_field_placeholder="Воспользуйтесь меню ниже"))
+
+@router.message(UserInput.gathering_info, F.text == "🟢 Telegram")
+async def gathering_info(msg: Message, bot: Bot):
+    await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
+    await bot.delete_message(msg.from_user.id, msg.message_id)
+    for elem in UserInput.posting_socs_dict:
+        if elem == "Telegram":
+            UserInput.posting_socs_dict[elem] = 0
+    await msg.answer(
+        "Выберите соц. сети, в которых хотите запостить:\nЧтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
+        reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
+            resize_keyboard=True,
+            input_field_placeholder="Воспользуйтесь меню ниже"))
+
+@router.message(UserInput.gathering_info, F.text == "🔴 Twitter")
+async def gathering_info(msg: Message, bot: Bot):
+    await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
+    await bot.delete_message(msg.from_user.id, msg.message_id)
+    for elem in UserInput.posting_socs_dict:
+        if elem == "Twitter":
+            UserInput.posting_socs_dict[elem] = 1
+    await msg.answer(
+        "Выберите соц. сети, в которых хотите запостить:\nЧтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
+        reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
+            resize_keyboard=True,
+            input_field_placeholder="Воспользуйтесь меню ниже"))
+
+@router.message(UserInput.gathering_info, F.text == "🟢 Twitter")
+async def gathering_info(msg: Message, bot: Bot):
+    await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
+    await bot.delete_message(msg.from_user.id, msg.message_id)
+    for elem in UserInput.posting_socs_dict:
+        if elem == "Twitter":
+            UserInput.posting_socs_dict[elem] = 0
+    print(UserInput.posting_socs_dict)
+    await msg.answer(
+        "Выберите соц. сети, в которых хотите запостить:\nЧтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
+        reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
+            resize_keyboard=True,
+            input_field_placeholder="Воспользуйтесь меню ниже"))
+
+@router.message(UserInput.gathering_info, F.text == "Опубликовать пост📢")
+async def posting_with_out_ai(msg: Message, state: FSMContext, bot: Bot):
     await state.set_state(UserInput.posting)
+    await msg.answer("Хотите ли воспользоваться функцией оригинальности текста?\nВ случае положительного ответа, "
+                     "в телеграм будет опубликован оригинальный пост, а в остальные выбранные соц. сети пост, который "
+                     "будет отражать смысл оригинального поста, но написан будет другими словами.\nВ случае "
+                     "отрицательного ответа, все соц. сети получат один и тот же пост.",
+                     reply_markup=keyboards.kb_yes_no)
 
 
-@router.message(UserInput.posting)
-async def posting(msg: Message, state: FSMContext):
-    json_f = msg.model_dump_json()
-    print(json_f)
-    await msg.answer("Норм.",
-                     reply_markup=types.ReplyKeyboardRemove())
+@router.message(UserInput.posting, F.text == "Да✔️")
+async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
+    await state.set_state(UserInput.posted)
+    await post_tg(UserInput.images_for_post_dict, UserInput.text_for_post_dict, msg, bot)
+
+    await msg.answer("Пост опубликован.",
+                     reply_markup=keyboards.kb_menu)
+
+@router.message(UserInput.gathering_info)
+async def gathering_info(msg: Message,):
+    UserInput.posting_socs_dict = await check_for_buttons(msg)
+    UserInput.text_for_post_dict[msg.from_user.id] = msg.text
+    await msg.answer("Выберите соц. сети, в которых хотите запостить:\nЧтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
+               reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
+                         resize_keyboard=True,
+                   input_field_placeholder="Воспользуйтесь меню ниже"))
 
 
 @router.message(StateFilter(None), F.text == "🔴 Вконтакте")
@@ -99,11 +271,16 @@ async def vk_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
     extension = '.txt'
 
     if extension in str(msg.document.file_name):
-        path = "database/uploaded_cookies/vk_cookie.txt"
+        path = "C:/Users/Endz/Documents/GitHub/DistributionManager/database/uploaded_cookies"
+        os.chdir(path)
+        if not os.path.isdir(str(msg.from_user.id)):
+            os.mkdir(str(msg.from_user.id))
+            print('папка создана')
         await bot.download(
             msg.document.file_id,
-            destination=path
+            destination=f"{path}/{str(msg.from_user.id)}/vk_cookie.txt"
         )
+        await asyncio.sleep(3)
         await db.update_cookie(msg.from_user.id, ["vk_cookie.txt"])
         await msg.answer("Куки успешно импортированы.")
         await state.clear()
@@ -112,10 +289,10 @@ async def vk_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
                              reply_markup=types.ReplyKeyboardRemove())
             await state.set_state(UserInput.vk_inputing_link)
         else:
-            networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
+            networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
 
             await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                             reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                             reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                                  resize_keyboard=True,
                                  input_field_placeholder="Воспользуйтесь меню ниже"))
     else:
@@ -129,10 +306,10 @@ async def vk_link_inputed(msg: Message, state: FSMContext, bot: Bot):
         await db.insert_link_vk(msg.from_user.id, msg.text)
         await msg.answer(f"Вы успешно добавили ссылку: {msg.text}")
         await state.clear()
-        networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
+        networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
 
         await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                              resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
     else:
         await msg.answer("Что-то не так, попробуйте ввести ссылку ещё раз.")
@@ -150,10 +327,10 @@ async def vk_unsigning(msg: Message, state: FSMContext):
     await db.delete_vk_cookie(msg.from_user.id)
     await db.delete_link_vk(msg.from_user.id)
     await msg.answer("Вы успешно отвязали эту соц. сеть.")
-    networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
+    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                          resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
     await state.clear()
 
@@ -176,6 +353,8 @@ async def tg_handler(msg: Message, state: FSMContext):
 async def tg_inputer(msg: Message, state: FSMContext):
     if msg.forward_origin:
         await db.insert_tg_channel_id(msg.from_user.id, str(msg.forward_origin.chat.id))
+        json_f = msg.model_dump_json()
+        print(json_f)
         await msg.answer("Id чата тг привязан, теперь добавьте бота в администраторы этого канала.")
         await state.clear()
 
@@ -198,14 +377,26 @@ async def tg_adding_admn(msg: Message, bot: Bot):
 
 @router.message(F.text == "🟢 Telegram")
 async def tg_handler(msg: Message):
+    await msg.answer(f"Вы уверены, что хотите отвязать эту соц сеть?",
+                     reply_markup=keyboards.kb_yes_no)
+
+@router.message(F.text == "Да✔️")
+async def tg_handler(msg: Message):
     await db.delete_tg_channel_id(msg.from_user.id)
-    await msg.answer(f"Вы успешно отвязали эту соц сеть.")
-    networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
+    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                          resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
+
+@router.message(F.text == "Нет❌")
+async def tg_handler(msg: Message):
+    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
+
+    await msg.answer(networks_str, parse_mode=ParseMode.HTML,
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
+                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 @router.message(StateFilter(None), F.text == "🔴 Twitter")
 async def tw_input_cookie(msg: Message, state: FSMContext):
@@ -219,18 +410,22 @@ async def tw_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
     extension = '.txt'
 
     if extension in str(msg.document.file_name):
-        path = "database/uploaded_cookies/vk_cookie.txt"
+        path = "C:/Users/Endz/Documents/GitHub/DistributionManager/database/uploaded_cookies"
+        os.chdir(path)
+        if not os.path.isdir(str(msg.from_user.id)):
+            os.mkdir(str(msg.from_user.id))
+            print('папка создана')
         await bot.download(
             msg.document.file_id,
-            destination=path
+            destination=f"{path}/{str(msg.from_user.id)}/tw_cookie.txt"
         )
         await db.update_cookie(msg.from_user.id, ["tw_cookie.txt"])
         await msg.answer("Куки успешно импортированы.")
         await state.clear()
-        networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
+        networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
 
         await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                              resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
     else:
         await msg.answer("Что-то не так, вы точно отправили файл с расширением \".txt\"?")
@@ -240,10 +435,10 @@ async def tw_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
 async def tw_handler(msg: Message):
     await db.delete_tw_cookie(msg.from_user.id)
     await msg.answer("Вы успешно отвязали эту соц сеть.")
-    networks_str = keyboards.str_with_soc_networks(await check_linked_soc(msg))
+    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
 
     await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc(msg)).as_markup(
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                          resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 

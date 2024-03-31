@@ -1,3 +1,4 @@
+from aiogram.types import Message
 from database.db_base import BaseDB
 from utils.cookie_format_change import cookie_to_base64
 
@@ -51,7 +52,7 @@ class UsersDB(BaseDB):
         if not (await self.check(login)):
             await self.insert_new_user(login)
 
-        query = f"""SELECT vk_link, vk_cookie, tw_cookie, tg_channel_id FROM data_user WHERE tg_id='{login}'"""
+        query = f"""SELECT vk_cookie, tw_cookie, tg_channel_id FROM data_user WHERE tg_id='{login}'"""
 
         cookies = await self.fetch(query)
         return cookies[0]
@@ -97,7 +98,7 @@ class UsersDB(BaseDB):
         if not (await self.check(login)):
             await self.insert_new_user(login)
         if cookie_dict is None and files is not None:
-            cookie_dict: dict = self.get_cookies_on_file(files)
+            cookie_dict: dict = self.get_cookies_on_file(files, login)
 
         update_params = ', '.join([f"{key} = '{cookie_to_base64(value)}'" for key, value in cookie_dict.items()])
 
@@ -113,11 +114,11 @@ class UsersDB(BaseDB):
         await self.execute(query)
 
     @staticmethod
-    def get_cookies_on_file(files: list):
-        path = "C:\\Users\\Endz\\Documents\\GitHub\\DistributionManager\\uploaded_cookies"
+    def get_cookies_on_file(files: list, login):
+        path = f"C:/Users/Endz/Documents/GitHub/DistributionManager/database/uploaded_cookies/{login}"
         cookies_dict = {}
         for file in files:
-            with open(f"{path}\\{file}", 'r') as f:
+            with open(f"{path}/{file}", 'r') as f:
                 cookies_dict[file.split('.')[0]] = f.readline()
         return cookies_dict
     
