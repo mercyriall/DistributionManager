@@ -14,9 +14,12 @@ from utils.create_request_parameters import take_payload_data
 
 load_dotenv()
 
-_proxy_token = os.getenv('PROXY_TOKEN')
-_proxy_geo = os.getenv('GEO_CODE')
+_proxy = os.getenv('PROXY')
+_proxy_login = os.getenv('PROXY_LOGIN')
+_proxy_password = os.getenv('PROXY_PASSWORD')
+
 _user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+
 _bearer = os.getenv('TWITTER_BEARER')
 _tweet_key = os.getenv('TWITTER_TWEET_KEY')
 
@@ -24,9 +27,8 @@ _tweet_key = os.getenv('TWITTER_TWEET_KEY')
 class TwitterTemplate:
     def __init__(self, telegram_user_id: str, cookie: str):
         self._id = telegram_user_id
-        self._proxy = (f'http://{_proxy_token}:'
-                       f'sessionId={telegram_user_id}&render=false&super=true&regionalGeoCode={_proxy_geo}'
-                       f'@proxy.scrape.do:8080')
+        self._proxy = f"http://{_proxy}"
+        self._proxy_credentials = [f'{_proxy_login}', f'{_proxy_password}']
         self._headers = self._request_headers_create(cookie)
         self.logging = Logging()
 
@@ -48,6 +50,12 @@ class TwitterTemplate:
     def get_proxy(self):
         return self._proxy
 
+    def get_proxy_credentials(self, key: str):
+        if key == 'login':
+            return self._proxy_credentials[0]
+        elif key == 'password':
+            return self._proxy_credentials[1]
+
     def get_headers(self):
         return self._headers
 
@@ -55,7 +63,7 @@ class TwitterTemplate:
 class TwitterDistribution(TwitterTemplate):
     """
     telegram_user_id - unique
-    !cookie format - base64 (decode/encode in /utils/cookie_format_change)
+    !cookie format - base64 (the decode/encode is in /utils/cookie_format_change)
     """
 
     __text_length_limit = 280
@@ -102,7 +110,10 @@ class TwitterDistribution(TwitterTemplate):
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                         url=url_create_tweet,
-                        # proxy=self.get_proxy(),
+                        proxy=self.get_proxy(),
+                        proxy_auth=aiohttp.BasicAuth(
+                            self.get_proxy_credentials('login'), self.get_proxy_credentials('password')
+                        ),
                         # ssl=False,
                         json=payload,
                         headers=self.get_headers()
@@ -160,7 +171,10 @@ class TwitterDistribution(TwitterTemplate):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                     url=url_delete_tweet,
-                    # proxy=self.get_proxy(),
+                    proxy=self.get_proxy(),
+                    proxy_auth=aiohttp.BasicAuth(
+                        self.get_proxy_credentials('login'), self.get_proxy_credentials('password')
+                    ),
                     # ssl=False,
                     json=payload,
                     headers=self.get_headers()
@@ -194,7 +208,7 @@ class TwitterDistribution(TwitterTemplate):
         for image in images:
             file_path = f'database/images/{image}'
             images_total_bytes.append(os.path.getsize(file_path))
-
+        print(images_total_bytes)
         for image_total_bytes in images_total_bytes:
             url_init = (f'https://upload.twitter.com/i/media/upload.json?command=INIT'
                         f'&total_bytes={image_total_bytes}&media_type=image%2Fjpeg&media_category=tweet_image')
@@ -203,7 +217,10 @@ class TwitterDistribution(TwitterTemplate):
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                             url=url_init,
-                            # proxy=self.get_proxy(),
+                            proxy=self.get_proxy(),
+                            proxy_auth=aiohttp.BasicAuth(
+                                self.get_proxy_credentials('login'), self.get_proxy_credentials('password')
+                            ),
                             # ssl=False,
                             headers=headers
                     ) as response:
@@ -212,7 +229,8 @@ class TwitterDistribution(TwitterTemplate):
                             images_id.append(json_data['media_id_string'])
 
                             self.logging.info(f"ID={self.get_id()} TOTAL_BYTES={image_total_bytes} (TWITTER)"
-                                              f" STATUS={response.status} INIT STAGE")
+                                              f" STATUS={response.status}, IMAGE_ID={json_data['media_id_string']}"
+                                              f" INIT STAGE")
                         else:
                             self.logging.warning(f"ID={self.get_id()} TOTAL_BYTES={image_total_bytes} (TWITTER)"
                                                  f" STATUS={response.status} INIT STAGE")
@@ -233,7 +251,7 @@ class TwitterDistribution(TwitterTemplate):
             files = aiohttp.FormData()
             files.add_field('media',
                             open(f"database/images/{images[i]}", 'rb'),
-                            content_type='multipart/form-data; boundary=----WebKitFormBoundaryQykHaFZ7kqbjoaVF',
+                            content_type='multipart/form-data; boundary=----WebKitFormBoundaryxmk93kXUVn2ALEwC',
                             filename=f"{images[i]}"
                             )
             try:
@@ -241,7 +259,10 @@ class TwitterDistribution(TwitterTemplate):
                     async with session.post(
                             url=url_append,
                             headers=headers,
-                            # proxy=self.get_proxy(),
+                            proxy=self.get_proxy(),
+                            proxy_auth=aiohttp.BasicAuth(
+                                self.get_proxy_credentials('login'), self.get_proxy_credentials('password')
+                            ),
                             # ssl=False,
                             data=files
                     ) as response:
@@ -274,10 +295,14 @@ class TwitterDistribution(TwitterTemplate):
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                             url=url_finalize,
-                            # proxy=self.get_proxy(),
+                            proxy=self.get_proxy(),
+                            proxy_auth=aiohttp.BasicAuth(
+                                self.get_proxy_credentials('login'), self.get_proxy_credentials('password')
+                            ),
                             # ssl=False,
                             headers=headers
                     ) as response:
+                        print(await response.text())
                         if response.status == 200 or response.status == 201:
                             json_data = json.loads(await response.text())
                             images_id.append(json_data['media_id_string'])
