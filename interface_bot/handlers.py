@@ -1,11 +1,8 @@
 import asyncio
-
-from aiogram.types.input_file import FSInputFile
 from aiogram import types, F, Router, Bot
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message
 from aiogram.filters import Command, StateFilter
-from aiogram.utils.media_group import MediaGroupBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.enums import ParseMode
 from aiogram.filters.chat_member_updated import \
@@ -85,6 +82,7 @@ async def check_networks_handler(msg: Message):
                      reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                          resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
+
 @router.message(F.text == "Создать пост💬")
 async def create_post_handler(msg: Message, state: FSMContext):
     await msg.answer("Окей, вы планировали прикреплять картинки к посту?\n"
@@ -104,7 +102,7 @@ async def cancel(msg: Message, state: FSMContext, bot: Bot):
     else:
         UserInput.images_for_post_dict[msg.from_user.id].append(msg.photo[-1].file_id)
     UserInput.images_for_post_dict[msg.from_user.id] = msg.photo[-1].file_id
-    path = "C:/Users/Endz/Documents/GitHub/DistributionManager/utils/photosForPost/"
+    path = "utils/photosForPost/"
     os.chdir(path)
     if not os.path.isdir(str(msg.from_user.id)):
         os.mkdir(str(msg.from_user.id))
@@ -120,8 +118,7 @@ async def cancel(msg: Message, state: FSMContext, bot: Bot):
 @router.message(F.text == "Продолжить заполнять пост✏️")
 async def getting_info(msg: Message, state: FSMContext):
     await state.set_state(UserInput.gathering_info)
-    await msg.answer("Напишите текст поста:",
-                         reply_markup=keyboards.kb_cancel)
+    await msg.answer("Напишите текст поста:", reply_markup=keyboards.kb_cancel)
 
 
 @router.message(UserInput.getting_images, F.text != "Нет❌")
@@ -141,7 +138,7 @@ async def cancel(msg: Message, state: FSMContext):
 
 @router.message(UserInput.gathering_info, F.text == "Отменить отправку❌")
 async def cancel(msg: Message, state: FSMContext, bot: Bot):
-    path = f"C:/Users/Endz/Documents/GitHub/DistributionManager/utils/photosForPost/{str(msg.from_user.id)}"
+    path = f"utils/photosForPost/{str(msg.from_user.id)}"
     os.chdir(path)
     for paths, dirs, files in os.walk(path):
         for file in files:
@@ -152,7 +149,7 @@ async def cancel(msg: Message, state: FSMContext, bot: Bot):
                      reply_markup=keyboards.kb_menu)
 
 
-@router.message(UserInput.gathering_info, F.text =="🔴 Вконтакте")
+@router.message(UserInput.gathering_info, F.text == "🔴 Вконтакте")
 async def gathering_info(msg: Message, bot: Bot):
     await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
     await bot.delete_message(msg.from_user.id, (msg.message_id))
@@ -164,6 +161,7 @@ async def gathering_info(msg: Message, bot: Bot):
         reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
             resize_keyboard=True,
             input_field_placeholder="Воспользуйтесь меню ниже"))
+
 
 @router.message(UserInput.gathering_info, F.text == "🟢 Вконтакте")
 async def gathering_info(msg: Message, bot: Bot):
@@ -178,6 +176,7 @@ async def gathering_info(msg: Message, bot: Bot):
             resize_keyboard=True,
             input_field_placeholder="Воспользуйтесь меню ниже"))
 
+
 @router.message(UserInput.gathering_info, F.text == "🔴 Telegram")
 async def gathering_info(msg: Message, bot: Bot):
     await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
@@ -190,6 +189,7 @@ async def gathering_info(msg: Message, bot: Bot):
         reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
             resize_keyboard=True,
             input_field_placeholder="Воспользуйтесь меню ниже"))
+
 
 @router.message(UserInput.gathering_info, F.text == "🟢 Telegram")
 async def gathering_info(msg: Message, bot: Bot):
@@ -204,6 +204,7 @@ async def gathering_info(msg: Message, bot: Bot):
             resize_keyboard=True,
             input_field_placeholder="Воспользуйтесь меню ниже"))
 
+
 @router.message(UserInput.gathering_info, F.text == "🔴 Twitter")
 async def gathering_info(msg: Message, bot: Bot):
     await bot.delete_message(msg.from_user.id, (msg.message_id - 1))
@@ -216,6 +217,7 @@ async def gathering_info(msg: Message, bot: Bot):
         reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
             resize_keyboard=True,
             input_field_placeholder="Воспользуйтесь меню ниже"))
+
 
 @router.message(UserInput.gathering_info, F.text == "🟢 Twitter")
 async def gathering_info(msg: Message, bot: Bot):
@@ -230,6 +232,7 @@ async def gathering_info(msg: Message, bot: Bot):
         reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
             resize_keyboard=True,
             input_field_placeholder="Воспользуйтесь меню ниже"))
+
 
 @router.message(UserInput.gathering_info, F.text == "Опубликовать пост📢")
 async def posting_with_out_ai(msg: Message, state: FSMContext, bot: Bot):
@@ -249,14 +252,17 @@ async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
     await msg.answer("Пост опубликован.",
                      reply_markup=keyboards.kb_menu)
 
+
 @router.message(UserInput.gathering_info)
 async def gathering_info(msg: Message,):
     UserInput.posting_socs_dict = await check_for_buttons(msg)
     UserInput.text_for_post_dict[msg.from_user.id] = msg.text
-    await msg.answer("Выберите соц. сети, в которых хотите запостить:\nЧтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
-               reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
+    await msg.answer("Выберите соц. сети, в которых хотите запостить:\n"
+                     "Чтобы исключить соц сеть из списка, нажмите на кнопку с ней.",
+                     reply_markup=keyboards.reply_kb_builder_soc(UserInput.posting_socs_dict).as_markup(
                          resize_keyboard=True,
-                   input_field_placeholder="Воспользуйтесь меню ниже"))
+                         input_field_placeholder="Воспользуйтесь меню ниже")
+                     )
 
 
 @router.message(StateFilter(None), F.text == "🔴 Вконтакте")
@@ -271,7 +277,7 @@ async def vk_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
     extension = '.txt'
 
     if extension in str(msg.document.file_name):
-        path = "C:/Users/Endz/Documents/GitHub/DistributionManager/database/uploaded_cookies"
+        path = "database/uploaded_cookies"
         os.chdir(path)
         if not os.path.isdir(str(msg.from_user.id)):
             os.mkdir(str(msg.from_user.id))
@@ -380,6 +386,7 @@ async def tg_handler(msg: Message):
     await msg.answer(f"Вы уверены, что хотите отвязать эту соц сеть?",
                      reply_markup=keyboards.kb_yes_no)
 
+
 @router.message(F.text == "Да✔️")
 async def tg_handler(msg: Message):
     await db.delete_tg_channel_id(msg.from_user.id)
@@ -410,7 +417,7 @@ async def tw_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
     extension = '.txt'
 
     if extension in str(msg.document.file_name):
-        path = "C:/Users/Endz/Documents/GitHub/DistributionManager/database/uploaded_cookies"
+        path = "database/uploaded_cookies"
         os.chdir(path)
         if not os.path.isdir(str(msg.from_user.id)):
             os.mkdir(str(msg.from_user.id))

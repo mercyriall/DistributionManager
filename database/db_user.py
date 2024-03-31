@@ -115,7 +115,7 @@ class UsersDB(BaseDB):
 
     @staticmethod
     def get_cookies_on_file(files: list, login):
-        path = f"C:/Users/Endz/Documents/GitHub/DistributionManager/database/uploaded_cookies/{login}"
+        path = f"database/uploaded_cookies/{login}"
         cookies_dict = {}
         for file in files:
             with open(f"{path}/{file}", 'r') as f:
