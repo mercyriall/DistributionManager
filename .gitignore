@@ -12,3 +12,4 @@ __pycache__
 test_back.py
 /.idea
 /idea
+/uploaded_cookies/*
