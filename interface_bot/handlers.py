@@ -425,14 +425,14 @@ async def tg_inputer(msg: Message, state: FSMContext):
                          reply_markup=types.ReplyKeyboardRemove())
 
 
-@router.my_chat_member(member_status_changed=IS_NOT_MEMBER >> ADMINISTRATOR)
+@router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=IS_NOT_MEMBER >> ADMINISTRATOR))
 async def tg_adding_admn(msg: Message, bot: Bot):
     await bot.send_message(msg.from_user.id,
                            "Теперь я админ, постинг в телеграм привязан.",
                            reply_markup=keyboards.kb_menu)
 
 
-@router.my_chat_member(member_status_changed=ADMINISTRATOR >> IS_NOT_MEMBER)
+@router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=ADMINISTRATOR >> IS_NOT_MEMBER))
 async def tg_adding_admn(msg: Message, bot: Bot):
     await db.delete_tg_channel_id(msg.from_user.id)
     await bot.send_message(msg.from_user.id,
