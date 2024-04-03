@@ -157,16 +157,14 @@ async def continue_posting(msg: Message, state: FSMContext):
 @router.message(UserInput.gathering_info, F.text == "Отменить отправку❌")
 async def cancel_posting(msg: Message, state: FSMContext, bot: Bot):
     path = 'utils/photosForPost'
-
-    os.chdir(path)
-    if os.path.isdir(str(msg.from_user.id)):
-        os.chdir(path)
-        for paths, dirs, files in os.walk(path):
-            for file in files:
-                os.remove(file)
-            break
-    os.chdir('../..')
-
+    os.chdir(f'{path}/{str(msg.from_user.id)}')
+    for paths, dirs, files in os.walk(os.getcwd()):
+        for file in files:
+            os.remove(file)
+        break
+    os.chdir('../../..')
+    UserInput.images_for_post_dict[msg.from_user.id] = []
+    UserInput.text_for_post_dict[msg.from_user.id] = []
     await state.clear()
     await msg.answer("Вы отменили создание поста.",
                      reply_markup=keyboards.kb_menu)
@@ -291,6 +289,15 @@ async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
             await msg.answer("Пост опубликован в Вконтакте.")
     await msg.answer("Пост опубликован во всех соц сетях.",
                      reply_markup=keyboards.kb_menu)
+    path = 'utils/photosForPost'
+    os.chdir(f'{path}/{str(msg.from_user.id)}')
+    for paths, dirs, files in os.walk(os.getcwd()):
+        for file in files:
+            os.remove(file)
+        break
+    os.chdir('../../..')
+    UserInput.images_for_post_dict[msg.from_user.id] = []
+    UserInput.text_for_post_dict[msg.from_user.id] = []
 
 
 @router.message(UserInput.posting, F.text == "Нет❌")
@@ -308,6 +315,15 @@ async def posting_without_ai(msg: Message, state: FSMContext, bot: Bot):
             await msg.answer("Пост опубликован в Вконтакте.")
     await msg.answer("Пост опубликован во всех соц сетях.",
                      reply_markup=keyboards.kb_menu)
+    path = 'utils/photosForPost'
+    os.chdir(f'{path}/{str(msg.from_user.id)}')
+    for paths, dirs, files in os.walk(os.getcwd()):
+        for file in files:
+            os.remove(file)
+        break
+    os.chdir('../../..')
+    UserInput.images_for_post_dict[msg.from_user.id] = []
+    UserInput.text_for_post_dict[msg.from_user.id] = []
 
 
 @router.message(UserInput.gathering_info)
@@ -332,23 +348,28 @@ async def vk_input_cookie(msg: Message, state: FSMContext):
 @router.message(UserInput.vk_inputing_cookie, F.document)
 async def vk_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
     extension = '.txt'
-
+    path = 'database/uploaded_cookies'
     if extension in str(msg.document.file_name):
-        path = 'database/uploaded_cookies'
-
         os.chdir(path)
         if not os.path.isdir(str(msg.from_user.id)):
             os.mkdir(str(msg.from_user.id))
             print('папка создана')
+        print(os.getcwd())
         os.chdir('../..')
 
         await bot.download(
             msg.document.file_id,
             destination=f"{path}/{str(msg.from_user.id)}/vk_cookie.txt"
         )
-        await asyncio.sleep(3)
+
         await db.update_cookie(msg.from_user.id, ["vk_cookie.txt"])
         await msg.answer("Куки успешно импортированы.")
+        os.chdir(f'{path}/{str(msg.from_user.id)}')
+        for paths, dirs, files in os.walk(os.getcwd()):
+            for file in files:
+                os.remove(file)
+            break
+        os.chdir('../../..')
         await state.clear()
         if (await db.check_link_vk(msg.from_user.id)) is False:
             await msg.answer("Введите ссылку на группу или страницу, с которой предполагается постинг.",
@@ -419,8 +440,6 @@ async def tg_handler(msg: Message, state: FSMContext):
 async def tg_inputer(msg: Message, state: FSMContext):
     if msg.forward_origin:
         await db.insert_tg_channel_id(msg.from_user.id, str(msg.forward_origin.chat.id))
-        json_f = msg.model_dump_json()
-        print(json_f)
         await msg.answer("Id чата тг привязан, теперь добавьте бота в администраторы этого канала.")
         await state.clear()
 
@@ -436,9 +455,12 @@ async def tg_inputer(msg: Message, state: FSMContext):
 
 @router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=IS_NOT_MEMBER >> ADMINISTRATOR))
 async def tg_adding_admn(msg: Message, bot: Bot):
-    await bot.send_message(msg.from_user.id,
-                           "Теперь я админ, постинг в телеграм привязан.",
-                           reply_markup=keyboards.kb_menu)
+    await bot.send_message(msg.from_user.id,"Теперь я админ, постинг в телеграм привязан.")
+    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
+
+    await msg.answer(networks_str, parse_mode=ParseMode.HTML,
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
+                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 
 @router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=ADMINISTRATOR >> IS_NOT_MEMBER))
@@ -453,6 +475,76 @@ async def tg_adding_admn(msg: Message, bot: Bot):
 async def tg_handler(msg: Message):
     await msg.answer(f"Вы уверены, что хотите отвязать эту соц сеть?",
                      reply_markup=keyboards.kb_yes_no)
+
+
+@router.message(StateFilter(None), F.text == "🔴 Twitter")
+async def tw_input_cookie(msg: Message, state: FSMContext):
+    await msg.answer("Загрузите файл с куки данной соц. сети, формат файла должен быть \".txt\"."
+                     "При возникновении вопросов, читайте документацию.\n", reply_markup=types.ReplyKeyboardRemove())
+    await state.set_state(UserInput.tw_inputing_cookie)
+
+
+@router.message(UserInput.tw_inputing_cookie, F.document)
+async def tw_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
+    extension = '.txt'
+    path = 'database/uploaded_cookies'
+    if extension in str(msg.document.file_name):
+        os.chdir(path)
+        if not os.path.isdir(str(msg.from_user.id)):
+            os.mkdir(str(msg.from_user.id))
+            print('папка создана')
+        os.chdir('../..')
+
+        await bot.download(
+            msg.document.file_id,
+            destination=f"{path}/{str(msg.from_user.id)}/tw_cookie.txt"
+        )
+
+        await db.update_cookie(msg.from_user.id, ["tw_cookie.txt"])
+        await msg.answer("Куки успешно импортированы.")
+        os.chdir(f'{path}/{str(msg.from_user.id)}')
+        for paths, dirs, files in os.walk(os.getcwd()):
+            for file in files:
+                os.remove(file)
+            break
+        os.chdir('../../..')
+        await state.clear()
+        networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
+
+        await msg.answer(networks_str, parse_mode=ParseMode.HTML,
+                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
+                             resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
+    else:
+        await msg.answer("Что-то не так, вы точно отправили файл с расширением \".txt\"?")
+
+
+@router.message(F.text == "🟢 Twitter")
+async def tw_handler(msg: Message, state: FSMContext):
+    await msg.answer(f"Вы уверены, что хотите отвязать эту соц сеть?",
+                     reply_markup=keyboards.kb_yes_no)
+    await state.set_state(UserInput.tw_unsigning)
+
+
+@router.message(UserInput.tw_unsigning, F.text == "Да✔️")
+async def tw_handler(msg: Message, state: FSMContext):
+    await db.delete_tw_cookie(msg.from_user.id)
+    await msg.answer("Вы успешно отвязали соц. сеть.")
+    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
+
+    await msg.answer(networks_str, parse_mode=ParseMode.HTML,
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
+                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
+    await state.clear()
+
+
+@router.message(UserInput.tw_unsigning, F.text == "Нет❌")
+async def tw_handler(msg: Message, state: FSMContext):
+    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
+
+    await msg.answer(networks_str, parse_mode=ParseMode.HTML,
+                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
+                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
+    await state.clear()
 
 
 @router.message(F.text == "Да✔️")
@@ -473,67 +565,8 @@ async def tg_handler(msg: Message):
                      reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
                          resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
-@router.message(StateFilter(None), F.text == "🔴 Twitter")
-async def tw_input_cookie(msg: Message, state: FSMContext):
-    await msg.answer("Загрузите файл с куки данной соц. сети, формат файла должен быть \".txt\"."
-                     "При возникновении вопросов, читайте документацию.\n", reply_markup=types.ReplyKeyboardRemove())
-    await state.set_state(UserInput.tw_inputing_cookie)
 
 
-@router.message(UserInput.tw_inputing_cookie, F.document)
-async def tw_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
-    extension = '.txt'
-
-    if extension in str(msg.document.file_name):
-        path = 'database/uploaded_cookies'
-
-        os.chdir(path)
-        if not os.path.isdir(str(msg.from_user.id)):
-            os.mkdir(str(msg.from_user.id))
-            print('папка создана')
-        os.chdir('../..')
-
-        await bot.download(
-            msg.document.file_id,
-            destination=f"{path}/{str(msg.from_user.id)}/tw_cookie.txt"
-        )
-
-        await db.update_cookie(msg.from_user.id, ["tw_cookie.txt"])
-        await msg.answer("Куки успешно импортированы.")
-        await state.clear()
-        networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
-
-        await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                         reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
-                             resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
-    else:
-        await msg.answer("Что-то не так, вы точно отправили файл с расширением \".txt\"?")
-
-
-@router.message(F.text == "🟢 Twitter")
-async def tw_handler(msg: Message, state: FSMContext):
-    await msg.answer(f"Вы уверены, что хотите отвязать эту соц сеть?",
-                     reply_markup=keyboards.kb_yes_no)
-    await state.set_state(UserInput.tw_unsigning)
-
-
-@router.message(UserInput.tw_unsigning, F.text == "Да✔️")
-async def tw_handler(msg: Message):
-    await db.delete_tw_cookie(msg.from_user.id)
-    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
-
-    await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
-                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
-
-
-@router.message(UserInput.tw_unsigning, F.text == "Нет❌")
-async def tw_handler(msg: Message):
-    networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
-
-    await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
-                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 
 @router.message()
