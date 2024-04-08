@@ -35,7 +35,8 @@ async def post_tg(images_dict: dict, text_dict: dict, msg: Message, bot: Bot):
 async def post_tw(text_dict: dict, msg: Message, neuro_flag: bool):
     path = f"utils/photosForPost/{str(msg.from_user.id)}"
     photos = []
-    twitter_manager = TwitterDistribution(str(msg.from_user.id), await db.get_data_user(msg.from_user.id)['tw_cookie'])
+    twitter_manager = TwitterDistribution(str(msg.from_user.id),
+                                          (await db.get_data_user(msg.from_user.id))['tw_cookie'])
     for paths, dirs, files in os.walk(path):
         for file in files:
             photos.append(file)
@@ -49,7 +50,9 @@ async def post_tw(text_dict: dict, msg: Message, neuro_flag: bool):
 async def post_vk(text_dict: dict, msg: Message, neuro_flag: bool):
     path = f"utils/photosForPost/{str(msg.from_user.id)}"
     photos = []
-    vk_manager = VkDistribution(str(msg.from_user.id), await db.get_data_user(msg.from_user.id)['vk_cookie'])
+    vk_manager = VkDistribution(str(msg.from_user.id),
+                                (await db.get_data_user(msg.from_user.id))['vk_cookie'],
+                                (await db.get_data_user(msg.from_user.id))['vk_link'].split("/")[-1])
     for paths, dirs, files in os.walk(path):
         for file in files:
             photos.append(file)

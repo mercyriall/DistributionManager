@@ -282,10 +282,10 @@ async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
             await post_tg(UserInput.images_for_post_dict, UserInput.text_for_post_dict, msg, bot)
             await msg.answer("Пост опубликован в Телеграм.")
         if elem == "Twitter" and UserInput.posting_socs_dict[elem] == 1:
-            await post_tw(UserInput.text_for_post_dict, msg, bool(1))
+            await post_tw(UserInput.text_for_post_dict, msg, True)
             await msg.answer("Пост опубликован в Твиттер.")
         if elem == "Вконтакте" and UserInput.posting_socs_dict[elem] == 1:
-            await post_vk(UserInput.text_for_post_dict, msg, bool(1))
+            await post_vk(UserInput.text_for_post_dict, msg, True)
             await msg.answer("Пост опубликован в Вконтакте.")
     await msg.answer("Пост опубликован во всех соц сетях.",
                      reply_markup=keyboards.kb_menu)
@@ -308,10 +308,10 @@ async def posting_without_ai(msg: Message, state: FSMContext, bot: Bot):
             await post_tg(UserInput.images_for_post_dict, UserInput.text_for_post_dict, msg, bot)
             await msg.answer("Пост опубликован в Телеграм.")
         if elem == "Twitter" and UserInput.posting_socs_dict[elem] == 1:
-            await post_tw(UserInput.text_for_post_dict, msg, bool(0))
+            await post_tw(UserInput.text_for_post_dict, msg, False)
             await msg.answer("Пост опубликован в Твиттер.")
         if elem == "Вконтакте" and UserInput.posting_socs_dict[elem] == 1:
-            await post_vk(UserInput.text_for_post_dict, msg, bool(0))
+            await post_vk(UserInput.text_for_post_dict, msg, False)
             await msg.answer("Пост опубликован в Вконтакте.")
     await msg.answer("Пост опубликован во всех соц сетях.",
                      reply_markup=keyboards.kb_menu)

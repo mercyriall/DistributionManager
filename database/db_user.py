@@ -52,7 +52,7 @@ class UsersDB(BaseDB):
         if not (await self.check(login)):
             await self.insert_new_user(login)
 
-        query = f"""SELECT vk_cookie, tw_cookie, tg_channel_id FROM data_user WHERE tg_id='{login}'"""
+        query = f"""SELECT vk_cookie, tw_cookie, tg_channel_id, vk_link FROM data_user WHERE tg_id='{login}'"""
 
         cookies = await self.fetch(query)
         return cookies[0]
@@ -100,7 +100,9 @@ class UsersDB(BaseDB):
         if cookie_dict is None and files is not None:
             cookie_dict: dict = self.get_cookies_on_file(files, login)
 
+        print(cookie_dict)
         update_params = ', '.join([f"{key} = '{cookie_to_base64(value)}'" for key, value in cookie_dict.items()])
+        print(update_params)
 
         query = f"""UPDATE data_user
                     SET {update_params}
@@ -119,6 +121,6 @@ class UsersDB(BaseDB):
         cookies_dict = {}
         for file in files:
             with open(f"{path}/{file}", 'r') as f:
-                cookies_dict[file.split('.')[0]] = f.readline()
+                cookies_dict[file.split('.')[0]] = f.read()
         return cookies_dict
     
