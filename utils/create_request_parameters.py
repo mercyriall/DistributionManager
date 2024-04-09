@@ -1,7 +1,7 @@
 import json
 
-_group_post_hash = "20b60f764fe0077f3d"
-_account_post_hash = "7dfa0bdfd13d4aa7be"
+_group_post_hash = "05f98062320ec0a1a2"
+_account_post_hash = "a56e92c881fa4f1bac"
 
 
 def vk_account_post_details(payload, account_id, post_text):
