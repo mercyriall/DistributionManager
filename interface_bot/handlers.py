@@ -117,7 +117,7 @@ async def image_uploading(msg: Message, state: FSMContext, bot: Bot):
         UserInput.images_for_post_dict[msg.from_user.id] = UserInput.images_for_post_dict.get(msg.from_user.id, []) + \
                                                            [msg.photo[-1].file_id]
         print(UserInput.images_for_post_dict)
-    path = 'utils/photosForPost'
+    path = 'database/images'
 
     os.chdir(path)
     if not os.path.isdir(str(msg.from_user.id)):
@@ -156,7 +156,7 @@ async def continue_posting(msg: Message, state: FSMContext):
 
 @router.message(UserInput.gathering_info, F.text == "Отменить отправку❌")
 async def cancel_posting(msg: Message, state: FSMContext, bot: Bot):
-    path = 'utils/photosForPost'
+    path = 'database/images'
     os.chdir(f'{path}/{str(msg.from_user.id)}')
     for paths, dirs, files in os.walk(os.getcwd()):
         for file in files:
@@ -289,7 +289,7 @@ async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
             await msg.answer("Пост опубликован в Вконтакте.")
     await msg.answer("Пост опубликован во всех соц сетях.",
                      reply_markup=keyboards.kb_menu)
-    path = 'utils/photosForPost'
+    path = 'database/images'
     os.chdir(f'{path}/{str(msg.from_user.id)}')
     for paths, dirs, files in os.walk(os.getcwd()):
         for file in files:
@@ -315,7 +315,7 @@ async def posting_without_ai(msg: Message, state: FSMContext, bot: Bot):
             await msg.answer("Пост опубликован в Вконтакте.")
     await msg.answer("Пост опубликован во всех соц сетях.",
                      reply_markup=keyboards.kb_menu)
-    path = 'utils/photosForPost'
+    path = 'database/images'
     os.chdir(f'{path}/{str(msg.from_user.id)}')
     for paths, dirs, files in os.walk(os.getcwd()):
         for file in files:
@@ -362,7 +362,7 @@ async def vk_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
             destination=f"{path}/{str(msg.from_user.id)}/vk_cookie.txt"
         )
 
-        await db.update_cookie(msg.from_user.id, ["vk_cookie.txt"])
+        await db.update_cookie(msg.from_user.id, "vk_cookie.txt")
         await msg.answer("Куки успешно импортированы.")
         os.chdir(f'{path}/{str(msg.from_user.id)}')
         for paths, dirs, files in os.walk(os.getcwd()):
@@ -500,7 +500,7 @@ async def tw_cookie_inputed(msg: Message, state: FSMContext, bot: Bot):
             destination=f"{path}/{str(msg.from_user.id)}/tw_cookie.txt"
         )
 
-        await db.update_cookie(msg.from_user.id, ["tw_cookie.txt"])
+        await db.update_cookie(msg.from_user.id, "tw_cookie.txt")
         await msg.answer("Куки успешно импортированы.")
         os.chdir(f'{path}/{str(msg.from_user.id)}')
         for paths, dirs, files in os.walk(os.getcwd()):

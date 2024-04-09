@@ -206,7 +206,7 @@ class TwitterDistribution(TwitterTemplate):
         headers.pop("content-type", None)
 
         for image in images:
-            file_path = f'database/images/{image}'
+            file_path = f'{image}'
             images_total_bytes.append(os.path.getsize(file_path))
         print(images_total_bytes)
         for image_total_bytes in images_total_bytes:
