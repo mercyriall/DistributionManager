@@ -1,3 +1,5 @@
+import json
+
 from aiogram.types import Message
 from database.db_base import BaseDB
 from utils.cookie_format_change import cookie_to_base64
@@ -93,20 +95,20 @@ class UsersDB(BaseDB):
                    WHERE tg_id = '{login}'"""
         await self.execute(query)
 
-    async def update_cookie(self, login, files: list = None, cookie_dict: dict = None):
+    async def update_cookie(self, login: str, file: str = None):
 
         if not (await self.check(login)):
             await self.insert_new_user(login)
-        if cookie_dict is None and files is not None:
-            cookie_dict: dict = self.get_cookies_on_file(files, login)
 
-        print(cookie_dict)
-        update_params = ', '.join([f"{key} = '{cookie_to_base64(value)}'" for key, value in cookie_dict.items()])
-        print(update_params)
+        if file is None:
+            return 0
+
+        cookie: str = self.get_cookies_on_file(login, file)
 
         query = f"""UPDATE data_user
-                    SET {update_params}
+                    SET {file.split('.')[0]} = '{cookie}'
                     WHERE tg_id = '{login}'"""
+
         await self.execute(query)
 
     async def insert_new_user(self, login):
@@ -116,11 +118,12 @@ class UsersDB(BaseDB):
         await self.execute(query)
 
     @staticmethod
-    def get_cookies_on_file(files: list, login):
+    def get_cookies_on_file(login: str, file: str):
         path = f"database/uploaded_cookies/{login}"
-        cookies_dict = {}
-        for file in files:
-            with open(f"{path}/{file}", 'r') as f:
-                cookies_dict[file.split('.')[0]] = f.read()
-        return cookies_dict
+
+        with open(f"{path}/{file}", "r") as f:
+            cookie = f.read()
+        json_cookie = json.loads(cookie)
+        cookie_ready_for_using = cookie_to_base64(json_cookie)
+        return cookie_ready_for_using
     
