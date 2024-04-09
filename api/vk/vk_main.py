@@ -161,8 +161,6 @@ class VkDistribution(VkTemplate):
                         #proxy=self.get_proxy(),
                         #ssl=False
                 ) as response:
-                    with open('test.html', 'w', encoding='UTF-8') as f:
-                        f.write(await response.text())
                     if response.status == 200:
                         try:
                             # профиль id
@@ -238,7 +236,7 @@ class VkDistribution(VkTemplate):
             try:
                 files = aiohttp.FormData()
                 files.add_field('file1',
-                                open(f"database/images/{file_name}", 'rb'),
+                                open(f"{file_name}", 'rb'),
                                 content_type='multipart/form-data',
                                 filename=f"{file_name}"
                                 )
@@ -311,8 +309,8 @@ class VkDistribution(VkTemplate):
         return images_id
 
     async def _insert_image_payload(self, payload: dict, images_id: list, teg: str):
-        if teg == "user": payload['hash'] = '9f40df1c00c16002f5'
-        else: payload['hash'] = '6dedfe9d7064041f35'
+        if teg == "user": payload['hash'] = 'a56e92c881fa4f1bac'
+        else: payload['hash'] = '05f98062320ec0a1a2'
 
         for i in range(len(images_id)):
             payload.update({f'attach{i+1}_type': 'photo'})
