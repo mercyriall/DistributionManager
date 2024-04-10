@@ -250,7 +250,7 @@ class TwitterDistribution(TwitterTemplate):
                           f'command=APPEND&media_id={images_id[i]}&segment_index=0')
             files = aiohttp.FormData()
             files.add_field('media',
-                            open(f"database/images/{images[i]}", 'rb'),
+                            open(f"{images[i]}", 'rb'),
                             content_type='multipart/form-data; boundary=----WebKitFormBoundaryxmk93kXUVn2ALEwC',
                             filename=f"{images[i]}"
                             )
