@@ -14,8 +14,12 @@ from database.init_db import database as db
 
 # функция для постинга в телеграм
 async def post_tg(images_dict: dict, text_dict: dict, msg: Message, bot: Bot):
+    print(images_dict)
+    print(text_dict)
     tg_channel_id = (await db.get_tg_channel_id(msg.from_user.id))[24:-3]
     if len(images_dict) == 0:
+        await bot.send_message(tg_channel_id, text_dict[msg.from_user.id])
+    elif len(images_dict.get(msg.from_user.id, 0)) == 0:
         await bot.send_message(tg_channel_id, text_dict[msg.from_user.id])
     elif len(images_dict[msg.from_user.id]) == 1:
         await bot.send_photo(tg_channel_id,

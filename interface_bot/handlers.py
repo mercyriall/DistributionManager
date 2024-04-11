@@ -294,7 +294,7 @@ async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
     os.chdir('../../..')
     await state.clear()
     UserInput.images_for_post_dict[msg.from_user.id] = []
-    UserInput.text_for_post_dict[msg.from_user.id] = []
+    UserInput.text_for_post_dict[msg.from_user.id] = ''
 
 
 # обработчик нажатия на кнопку не использования функции генерации оригинального текста для поста
@@ -321,7 +321,7 @@ async def posting_without_ai(msg: Message, state: FSMContext, bot: Bot):
     os.chdir('../../..')
     await state.clear()
     UserInput.images_for_post_dict[msg.from_user.id] = []
-    UserInput.text_for_post_dict[msg.from_user.id] = []
+    UserInput.text_for_post_dict[msg.from_user.id] = ''
 
 
 # обработчик выбора соц сетей для постинга
