@@ -40,29 +40,9 @@ class UserInput(StatesGroup):
     getting_images = State()
     gathering_info = State()
     posting = State()
-    posted = State()
     images_for_post_dict ={}
     text_for_post_dict = {}
     posting_socs_dict = {}
-
-
-@router.message(Command('start'))
-async def start_handler(msg: Message):
-    print(msg.model_dump_json())
-    if await db.check(msg.from_user.id) is False:
-        await db.insert_new_user(msg.from_user.id)
-
-    await msg.answer("Привет! Я бот по управлению соц сетями. Для взаимодействия со мной воспользуйся меню.",
-                     reply_markup=keyboards.kb_menu)
-
-
-@router.message(F.text.lower().in_(greetings))
-async def start_handler(msg: Message):
-    if await db.check(msg.from_user.id) is False:
-        await db.insert_new_user(msg.from_user.id)
-
-    await msg.answer("Привет! Я бот по управлению соц сетями. Для взаимодействия со мной воспользуйся меню.",
-                     reply_markup=keyboards.kb_menu)
 
 
 @router.message(F.text == "Инструкция по использованию🎓")
@@ -110,7 +90,6 @@ async def create_post_handler(msg: Message, state: FSMContext):
 
 @router.message(UserInput.getting_images, F.photo)
 async def image_uploading(msg: Message, state: FSMContext, bot: Bot):
-    await state.clear()
     if msg.from_user.id not in UserInput.images_for_post_dict:
         UserInput.images_for_post_dict[msg.from_user.id] = [msg.photo[-1].file_id]
     else:
@@ -133,7 +112,7 @@ async def image_uploading(msg: Message, state: FSMContext, bot: Bot):
     print(UserInput.images_for_post_dict)
 
 
-@router.message(F.text == "Продолжить заполнять пост✏️")
+@router.message(UserInput.getting_images, F.text == "Продолжить заполнять пост✏️")
 async def continue_post(msg: Message, state: FSMContext):
     await state.set_state(UserInput.gathering_info)
     await msg.answer("Напишите текст поста:", reply_markup=keyboards.kb_cancel)
@@ -276,7 +255,6 @@ async def posting_with_out_ai(msg: Message, state: FSMContext, bot: Bot):
 
 @router.message(UserInput.posting, F.text == "Да✔️")
 async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
-    await state.set_state(UserInput.posted)
     for elem in UserInput.posting_socs_dict:
         if elem == "Telegram" and UserInput.posting_socs_dict[elem] == 1:
             await post_tg(UserInput.images_for_post_dict, UserInput.text_for_post_dict, msg, bot)
@@ -296,13 +274,13 @@ async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
             os.remove(file)
         break
     os.chdir('../../..')
+    await state.clear()
     UserInput.images_for_post_dict[msg.from_user.id] = []
     UserInput.text_for_post_dict[msg.from_user.id] = []
 
 
 @router.message(UserInput.posting, F.text == "Нет❌")
 async def posting_without_ai(msg: Message, state: FSMContext, bot: Bot):
-    await state.set_state(UserInput.posted)
     for elem in UserInput.posting_socs_dict:
         if elem == "Telegram" and UserInput.posting_socs_dict[elem] == 1:
             await post_tg(UserInput.images_for_post_dict, UserInput.text_for_post_dict, msg, bot)
@@ -322,6 +300,7 @@ async def posting_without_ai(msg: Message, state: FSMContext, bot: Bot):
             os.remove(file)
         break
     os.chdir('../../..')
+    await state.clear()
     UserInput.images_for_post_dict[msg.from_user.id] = []
     UserInput.text_for_post_dict[msg.from_user.id] = []
 
@@ -566,7 +545,22 @@ async def tg_handler(msg: Message):
                          resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 
+@router.message(Command('start'))
+async def start_handler(msg: Message):
+    if await db.check(msg.from_user.id) is False:
+        await db.insert_new_user(msg.from_user.id)
 
+    await msg.answer("Привет! Я бот по управлению соц сетями. Для взаимодействия со мной воспользуйся меню.",
+                     reply_markup=keyboards.kb_menu)
+
+
+@router.message(F.text.lower().in_(greetings))
+async def start_handler(msg: Message):
+    if await db.check(msg.from_user.id) is False:
+        await db.insert_new_user(msg.from_user.id)
+
+    await msg.answer("Привет! Я бот по управлению соц сетями. Для взаимодействия со мной воспользуйся меню.",
+                     reply_markup=keyboards.kb_menu)
 
 
 @router.message()

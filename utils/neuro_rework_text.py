@@ -9,7 +9,7 @@ load_dotenv()
 credentials = os.getenv('NEURO_CREDENTIALS')
 
 
-def rework_post(title):
+async def rework_post(title):
     """
     GigaChat возвращает текст с таким же смыслом, но другими словами
     """

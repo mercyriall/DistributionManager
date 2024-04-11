@@ -14,8 +14,9 @@ from database.init_db import database as db
 
 async def post_tg(images_dict: dict, text_dict: dict, msg: Message, bot: Bot):
     tg_channel_id = (await db.get_tg_channel_id(msg.from_user.id))[24:-3]
-
-    if len(images_dict[msg.from_user.id]) == 1:
+    if len(images_dict) == 0:
+        await bot.send_message(tg_channel_id, text_dict[msg.from_user.id])
+    elif len(images_dict[msg.from_user.id]) == 1:
         await bot.send_photo(tg_channel_id,
                              photo=images_dict[msg.from_user.id],
                              caption=text_dict[msg.from_user.id])
