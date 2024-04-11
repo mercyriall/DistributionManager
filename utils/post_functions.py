@@ -18,7 +18,7 @@ async def post_tg(images_dict: dict, text_dict: dict, msg: Message, bot: Bot):
         await bot.send_message(tg_channel_id, text_dict[msg.from_user.id])
     elif len(images_dict[msg.from_user.id]) == 1:
         await bot.send_photo(tg_channel_id,
-                             photo=images_dict[msg.from_user.id],
+                             photo=images_dict[msg.from_user.id][0],
                              caption=text_dict[msg.from_user.id])
     else:
         album_builder = MediaGroupBuilder(
