@@ -12,6 +12,7 @@ from utils.neuro_rework_text import rework_post
 from database.init_db import database as db
 
 
+# функция для постинга в телеграм
 async def post_tg(images_dict: dict, text_dict: dict, msg: Message, bot: Bot):
     tg_channel_id = (await db.get_tg_channel_id(msg.from_user.id))[24:-3]
     if len(images_dict) == 0:
@@ -33,6 +34,7 @@ async def post_tg(images_dict: dict, text_dict: dict, msg: Message, bot: Bot):
         )
 
 
+# функция для постинга в твиттер
 async def post_tw(text_dict: dict, msg: Message, neuro_flag: bool):
     path = f"database/images/{str(msg.from_user.id)}"
     photos = []
@@ -48,6 +50,7 @@ async def post_tw(text_dict: dict, msg: Message, neuro_flag: bool):
         await twitter_manager.create_tweet(text_dict[msg.from_user.id], photos)
 
 
+# функция для постинга в вконтакте
 async def post_vk(text_dict: dict, msg: Message, neuro_flag: bool):
     path = f"database/images/{str(msg.from_user.id)}"
     photos = []

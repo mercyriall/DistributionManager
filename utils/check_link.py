@@ -3,6 +3,7 @@ from aiogram.types import Message
 from database.init_db import database as db
 
 
+# функция для определения привязанных соц сетей
 async def check_linked_soc_list(msg: Message):
     user = await db.get_data_user(msg.from_user.id)
 
@@ -18,6 +19,7 @@ async def check_linked_soc_list(msg: Message):
     return networks
 
 
+# функция для выбора соц сетей для постинга
 async def check_for_buttons(msg: Message):
     user = await db.get_data_user(msg.from_user.id)
 
