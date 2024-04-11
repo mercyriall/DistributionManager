@@ -6,7 +6,7 @@
 ---
 ### twitter_main.py
 ```python
-    class TwitterTemplate
+    class TwitterTemplate:
     """
     базовый класс содержащий headers запроса и 
     неизменяемые поля привязанные к пользователю
@@ -15,26 +15,26 @@
 ---
 
 ```python
-    class TwitterDistribution(TwitterTemplate)
+    class TwitterDistribution(TwitterTemplate):
     """
     класс для создания поста в твитере
     наследует поля для аутентификации пользователя
     """
 ```
  ```python
-    def get_text_limit(self)
+    def get_text_limit(self):
     """
     возвращает ограничение на длину текста для твитера
     """
 ```
 ```python
-    def get_images_limit(self)
+    def get_images_limit(self):
     """
     возвращает ограничение на количество изображений для твитера
     """
 ```
 ```python
-    async def create_tweet(self, tweet_text: str = '', images: list = [])
+    async def create_tweet(self, tweet_text: str = '', images: list = []):
     """
     основной метод для создания поста, принимает текст
     и массив с названиями изображений (заранее сохраненными
@@ -42,47 +42,47 @@
     """
 ```
 ```python
-    async def check_cookie(self)
+    async def check_cookie(self):
     """
     проверка работоспособности куки, сразу можно выдать
     пользователю фидбек правильно ли он импортировал куки
     """
 ```
 ```python
-    async def _delete_tweet(self, tweet_id: str)
+    async def _delete_tweet(self, tweet_id: str):
     """
     удаление поста (применяется при проверке на качество куки) 
     """
 ```
 ```python
-    async def _prepare_payload(self, payload: dict, tweet_text: str, images: list)
+    async def _prepare_payload(self, payload: dict, tweet_text: str, images: list):
     """
     формируем payload файл для определенного юзера;текста;изображений
     """
 ```
 ```python
-    async def _command_INIT(self, images: list)
+    async def _command_INIT(self, images: list):
     """
     этап вставки картинки(1/3)
     запрос на инициализацию изображения в твитере
     """
 ```
 ```python
-    async def _command_APPEND(self, images: list, images_id: list)
+    async def _command_APPEND(self, images: list, images_id: list):
     """
     этап вставки картинки(2/3)
     запрос с передачей файла (изображения)
     """
 ```
 ```python
-    async def _command_FINALIZE(self, images_id: list)
+    async def _command_FINALIZE(self, images_id: list):
     """
     этап вставки картинки(3/3)
     финальный запрос на импорт картинки в твитер
     """
 ```
 ```python
-    async def _get_images_id(self, images: list)
+    async def _get_images_id(self, images: list):
     """
     получаем присвоенный id нашей картинке 
     (выдается по размеру изображения)
@@ -104,7 +104,7 @@
 ---
 ### vk_main.py
 ```python
-    class VkTemplate
+    class VkTemplate:
     """
     базовый класс содержащий headers запроса и 
     неизменяемые поля привязанные к пользователю
@@ -113,26 +113,26 @@
 ---
 
 ```python
-    class VkDistribution(VkTemplate)
+    class VkDistribution(VkTemplate):
     """
     класс для создания поста в вк
     наследует поля для аутентификации пользователя
     """
 ```
  ```python
-    def get_text_limit(self)
+    def get_text_limit(self):
     """
     возвращает ограничение на длину текста для вк
     """
 ```
 ```python
-    def get_images_limit(self)
+    def get_images_limit(self):
     """
     возвращает ограничение на количество изображений для вк
     """
 ```
 ```python
-    async def create_tweet(self, tweet_text: str = '', images: list = [])
+    async def create_tweet(self, tweet_text: str = '', images: list = []):
     """
     основной метод для создания поста, принимает текст
     и массив с названиями изображений (заранее сохраненными
@@ -140,7 +140,7 @@
     """
 ```
 ```python
-    async def check_cookie_and_link(self)
+    async def check_cookie_and_link(self):
     """
     проверка работоспособности куки и правильность ссылки,
      сразу можно выдать
@@ -149,32 +149,32 @@
     """
 ```
 ```python
-    async def _take_page_id(self)
+    async def _take_page_id(self):
     """
     получаем id привязанное к аккаунту юзера (соц сети, а не тг)
     """
 ```
 ```python
-    async def _take_images_token(self, teg: str, acc_id: str)
+    async def _take_images_token(self, teg: str, acc_id: str):
     """
     получаем token привязанный к изображения
     """
 ```
 ```python
-    async def _take_images_id(self, images: list, teg: str, acc_id: str)
+    async def _take_images_id(self, images: list, teg: str, acc_id: str):
     """
     получаем id изображения
     """
 ```
 ```python
-    async def _insert_image_payload(self, payload: dict, images_id: list, teg: str)
+    async def _insert_image_payload(self, payload: dict, images_id: list, teg: str):
     """
     импортируем полученные данные изображения в 
     payload файл
     """
 ```
 ```python
-    async def _create_post_preparation(self, post_text: str, images: list)
+    async def _create_post_preparation(self, post_text: str, images: list):
     """
     формируем payload файл проверяя есть ли
     переданные изображения и куда постим (группа, профиль)

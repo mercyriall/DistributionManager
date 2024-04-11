@@ -41,14 +41,14 @@ class UserInput(StatesGroup):
     getting_images = State()
     gathering_info = State()
     posting = State()
-    images_for_post_dict ={}
+    images_for_post_dict = {}
     text_for_post_dict = {}
     posting_socs_dict = {}
 
 
 # обработчик нажатия на кнопку инструкции
 @router.message(F.text == "Инструкция по использованию🎓")
-async def menu_handler(msg: Message, state: FSMContext):
+async def menu_instruction_handler(msg: Message, state: FSMContext):
     await state.clear()
     await msg.answer("Для того, чтобы узнать о том, как пользоваться этим ботом - посетите страницу GitHub проекта: "
                      "https://github.com/mercyriall/DistributionManager", keyboards.kb_menu)
