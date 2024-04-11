@@ -51,7 +51,7 @@ class UserInput(StatesGroup):
 async def menu_instruction_handler(msg: Message, state: FSMContext):
     await state.clear()
     await msg.answer("Для того, чтобы узнать о том, как пользоваться этим ботом - посетите страницу GitHub проекта: "
-                     "https://github.com/mercyriall/DistributionManager", keyboards.kb_menu)
+                     "https://github.com/mercyriall/DistributionManager", reply_markup=keyboards.kb_menu)
 
 
 # обработчик нажатия на кнопку меню
@@ -283,7 +283,7 @@ async def posting_with_ai(msg: Message, state: FSMContext, bot: Bot):
         if elem == "Вконтакте" and UserInput.posting_socs_dict[elem] == 1:
             await post_vk(UserInput.text_for_post_dict, msg, True)
             await msg.answer("Пост опубликован в Вконтакте.")
-    await msg.answer("Пост опубликован во всех соц сетях.",
+    await msg.answer("Пост опубликован во всех выбранных соц сетях.",
                      reply_markup=keyboards.kb_menu)
     path = 'database/images'
     os.chdir(f'{path}/{str(msg.from_user.id)}')
@@ -310,7 +310,7 @@ async def posting_without_ai(msg: Message, state: FSMContext, bot: Bot):
         if elem == "Вконтакте" and UserInput.posting_socs_dict[elem] == 1:
             await post_vk(UserInput.text_for_post_dict, msg, False)
             await msg.answer("Пост опубликован в Вконтакте.")
-    await msg.answer("Пост опубликован во всех соц сетях.",
+    await msg.answer("Пост опубликован во всех выбранных соц сетях.",
                      reply_markup=keyboards.kb_menu)
     path = 'database/images'
     os.chdir(f'{path}/{str(msg.from_user.id)}')
@@ -466,9 +466,9 @@ async def tg_adding_admn(msg: Message, bot: Bot):
     await bot.send_message(msg.from_user.id,"Теперь я админ, постинг в телеграм привязан.")
     networks_str = keyboards.str_with_soc_networks(await check_linked_soc_list(msg))
 
-    await msg.answer(networks_str, parse_mode=ParseMode.HTML,
-                     reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
-                         resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
+    await bot.send_message(msg.from_user.id, networks_str, parse_mode=ParseMode.HTML,
+                           reply_markup=keyboards.reply_kb_builder(await check_linked_soc_list(msg)).as_markup(
+                               resize_keyboard=True, input_field_placeholder="Воспользуйтесь меню ниже"))
 
 
 # обработчик удаления бота из администраторов канала
